@@ -1,1 +1,99 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SupaBaseKripto - Status Monitor</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: sans-serif; background-color: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 500px; margin-bottom: 20px; }
+        h2 { margin-top: 0; font-size: 1.2rem; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        
+        button { border: none; border-radius: 8px; padding: 12px; color: white; cursor: pointer; font-weight: bold; transition: opacity 0.2s; }
+        button:hover { opacity: 0.8; }
+        
+        .btn-study { background-color: #28a745; }
+        .btn-coffee { background-color: #ffc107; color: #333; }
+        .btn-game { background-color: #17a2b8; }
+        .btn-home { background-color: #6c757d; }
 
+        .status-item { border-bottom: 1px solid #eee; padding: 10px 0; display: flex; align-items: center; }
+        .dot { height: 10px; width: 10px; background-color: #ffc107; border-radius: 50%; margin-right: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>Мой профиль</h2>
+        <p>Вы зашли как: <strong id="my-name">Загрузка...</strong></p>
+        <div class="grid">
+            <button class="btn-study" onclick="updateMyStatus('📚 Учусь')">📚 Учусь</button>
+            <button class="btn-coffee" onclick="updateMyStatus('☕ Кофе')">☕ Кофе</button>
+            <button class="btn-game" onclick="updateMyStatus('🎮 В игре')">🎮 В игре</button>
+            <button class="btn-home" onclick="updateMyStatus('🏠 Дома')">🏠 Дома</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Монитор группы</h2>
+        <div id="group-list">
+            </div>
+    </div>
+
+    <script>
+        // --- НАСТРОЙКИ (ЗАМЕНИ НА СВОИ) ---
+        const SUPABASE_URL = 'https://your-project.supabase.co';
+        const SUPABASE_KEY = 'your-anon-key';
+        const MY_USER_ID = 'your-uuid-from-step-1'; 
+
+        const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // 1. Функция обновления статуса
+        async function updateMyStatus(newStatus) {
+            const { error } = await supabase
+                .from('profiles')
+                .update({ status: newStatus })
+                .eq('id', MY_USER_ID);
+            
+            if (error) console.error('Ошибка обновления:', error);
+        }
+
+        // 2. Функция получения данных и отрисовки списка
+        async function fetchStatuses() {
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('*');
+
+            if (data) {
+                const listHtml = data.map(user => `
+                    <div class="status-item">
+                        <div class="dot"></div>
+                        <div>
+                            <strong>${user.username}</strong><br>
+                            <span style="color: #666; font-size: 0.9rem;">${user.status || 'Нет статуса'}</span>
+                        </div>
+                    </div>
+                `).join('');
+                document.getElementById('group-list').innerHTML = listHtml;
+                
+                // Отобразим ваше имя в карточке профиля
+                const me = data.find(u => u.id === MY_USER_ID);
+                if (me) document.getElementById('my-name').innerText = me.username;
+            }
+        }
+
+        // 3. Подписка на изменения в реальном времени (Realtime)
+        supabase
+            .channel('any')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, (payload) => {
+                fetchStatuses(); // Перерисовываем при любом изменении в базе
+            })
+            .subscribe();
+
+        // Запускаем при загрузке страницы
+        fetchStatuses();
+    </script>
+</body>
+</html>
