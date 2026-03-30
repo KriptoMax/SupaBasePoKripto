@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SupaBaseKripto - Status Monitor</title>
+    <title>SupaBase Monitor</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: sans-serif; background-color: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; }
@@ -19,15 +19,15 @@
         .btn-game { background-color: #17a2b8; }
         .btn-home { background-color: #6c757d; }
 
-        .status-item { border-bottom: 1px solid #eee; padding: 10px 0; display: flex; align-items: center; }
-        .dot { height: 10px; width: 10px; background-color: #ffc107; border-radius: 50%; margin-right: 10px; }
+        .user-item { border-bottom: 1px solid #eee; padding: 10px 0; display: flex; align-items: center; }
+        .dot { height: 12px; width: 12px; background-color: #28a745; border-radius: 50%; margin-right: 15px; }
     </style>
 </head>
 <body>
 
     <div class="card">
         <h2>Мой профиль</h2>
-        <p>Вы зашли как: <strong id="my-name">Загрузка...</strong></p>
+        <p id="my-info">Загрузка профиля...</p>
         <div class="grid">
             <button class="btn-study" onclick="updateMyStatus('📚 Учусь')">📚 Учусь</button>
             <button class="btn-coffee" onclick="updateMyStatus('☕ Кофе')">☕ Кофе</button>
@@ -38,58 +38,69 @@
 
     <div class="card">
         <h2>Монитор группы</h2>
-        <div id="group-list">
-            </div>
+        <div id="group-list">Загрузка списка...</div>
     </div>
 
     <script>
-        // --- НАСТРОЙКИ (ЗАМЕНИ НА СВОИ) ---
-        const URL = 'https://ntkqkvgbmhhwrxcdntqg.supabase.co';
-        const KEY = 'sb_publishable_Vf3rIV5OqOaDV73ZH3B6og_bYPzTusD';
-        const supabase = createClient(URL, KEY);
-        
-        const MY_USER_ID = '502d2c0d-5183-4170-832d-84afe341c5e3'; 
+        // --- НАСТРОЙКИ (ПРОВЕРЬ СВОИ ДАННЫЕ) ---
+        const SUPABASE_URL = 'https://ntkqkvgbmhhwrxcdntqg.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_Vf3rIV5OqOaDV73ZH3B6og_bYPzTusD'; // Используй anon/public key
+        const MY_USER_ID = '502d2c0d-5183-4170-832d-84afe341c5e3'; // Твой ID из таблицы
 
-        window.changeStatus = async (text, color) => {
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // Функция обновления статуса
+        async function updateMyStatus(newStatus) {
             const { error } = await supabase
                 .from('profiles')
-                .update({ status: text, color: color})
+                .update({ status: newStatus })
                 .eq('id', MY_USER_ID);
 
-            if (error){
-                alert('Error')
+            if (error) {
+                alert('Ошибка при обновлении!');
                 console.error(error);
             } else {
-                fetchGroup();
+                fetchGroup(); // Сразу обновляем список
             }
-        };
-
-        async function fetchGroup(){
-            const {data, error} = await supabase
-                .from('profiles')
-                .select('*')
-                .order('username', { ascending: true});
-
-            if (error) return console.error(error);
-            list.innerHTML = data.map(user => '
-                <div class="user-item">
-                    <div class="status dot" style="background: ${user.color || '#ccc'}"></div>
-                    <div style="flex-grow: 1;">
-                        <strong>${user.username}</strong><br>
-                        <small style="color: #666>${user.status || 'Статус не задан'}</small>
-                    </div>
-                </div>
-            ').join(''):
-
-            const me = data.find(u => u.id === MY_USER_ID);
-            if (me) document.getElementById('myInfo').innerText = 'Вы зашли как: ${me.username}';
         }
 
+        // Функция получения данных
+        async function fetchGroup() {
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .order('username', { ascending: true });
+
+            if (error) {
+                console.error('Ошибка получения данных:', error);
+                return;
+            }
+
+            const listContainer = document.getElementById('group-list');
+            
+            // Отрисовка списка
+            listContainer.innerHTML = data.map(user => `
+                <div class="user-item">
+                    <div class="dot"></div>
+                    <div style="flex-grow: 1;">
+                        <strong>${user.username}</strong><br>
+                        <small style="color: #666">${user.status || 'Нет статуса'}</small>
+                    </div>
+                </div>
+            `).join('');
+
+            // Обновление имени в шапке
+            const me = data.find(u => u.id === MY_USER_ID);
+            if (me) {
+                document.getElementById('my-info').innerHTML = `Вы зашли как: <strong>${me.username}</strong>`;
+            }
+        }
+
+        // Запуск при загрузке
         fetchGroup();
 
+        // Обновление каждые 5 секунд
         setInterval(fetchGroup, 5000);
-
-        
     </script>
 </body>
 </html>
