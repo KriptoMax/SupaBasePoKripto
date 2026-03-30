@@ -2,58 +2,63 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>SupaBase Monitor</title>
+    <title>Status Monitor</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: sans-serif; background-color: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; }
         .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 500px; margin-bottom: 20px; }
         .user-item { border-bottom: 1px solid #eee; padding: 10px 0; display: flex; align-items: center; }
-        .dot { height: 12px; width: 12px; border-radius: 50%; margin-right: 15px; }
+        .status-dot { height: 12px; width: 12px; border-radius: 50%; margin-right: 15px; }
         .online { background-color: #28a745; box-shadow: 0 0 8px #28a745; }
         .offline { background-color: #ccc; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
         button { border: none; border-radius: 8px; padding: 12px; color: white; cursor: pointer; font-weight: bold; background: #007bff; }
-        .email-label { color: #888; font-size: 0.8rem; }
+        .email-label { color: #888; font-size: 0.8rem; font-weight: normal; }
     </style>
 </head>
 <body>
 
     <div class="card">
         <h2>Мой профиль</h2>
-        <p id="my-info">Подключение к системе...</p>
+        <p id="myInfo">Загрузка...</p>
         <div class="grid">
-            <button onclick="updateStatus('🟢 В сети')">Войти в сеть</button>
-            <button style="background: #6c757d;" onclick="updateStatus('⚪ Не в сети')">Отойти</button>
+            <button onclick="changeStatus('🟢 В сети')">В сети</button>
+            <button style="background: #6c757d;" onclick="changeStatus('⚪ Не в сети')">Не в сети</button>
         </div>
     </div>
 
     <div class="card">
         <h2>Монитор группы</h2>
-        <div id="group-list">Загрузка списка...</div>
+        <div id="groupList">Загрузка списка...</div>
     </div>
 
     <script>
-        // --- ПРОВЕРЬ ЭТИ ДАННЫЕ (БЕЗ ПРОБЕЛОВ ВНУТРИ) ---
-        const SB_URL = 'https://ntkqkvgbmhhwrxcdntqg.supabase.co';
-        const SB_KEY = 'sb_publishable_Vf3rIV5OqOaDV73ZH3B6og_bYPzTusD';
-        const MY_ID = '502d2c0d-5183-4170-832d-84afe341c5e3'; 
+        // ДАННЫЕ ИЗ ТВОЕГО СКРИНШОТА
+        const URL = 'https://rncerhgizyjhovbdpqnl.supabase.co';
+        const KEY = 'sb_publishable_ThtftS6uBeaKf8FyndIFTg_OOHMJ5yh';
+        const MY_ID = '4bc5694e-89f8-47d9-9b60-2d3bd2439122';
 
-        // Инициализация (переименовал, чтобы не было конфликтов)
-        const mySupabase = supabase.createClient(SB_URL, SB_KEY);
+        const supabaseClient = supabase.createClient(URL, KEY);
 
-        // Функция обновления статуса
-        async function updateStatus(txt) {
-            const { error } = await mySupabase.from('profiles').update({ status: txt }).eq('id', MY_ID);
-            if (error) console.error("Ошибка:", error.message);
-        }
+        // Функция смены текста статуса
+        window.changeStatus = async (text) => {
+            const { error } = await supabaseClient
+                .from('profiles')
+                .update({ status: text }) // Убрал color, так как он вызывает ошибку
+                .eq('id', MY_ID);
 
-        async function initApp() {
-            // 1. Получаем список всех из базы
-            let { data: users, error } = await mySupabase.from('profiles').select('*');
-            if (error) return console.error("Ошибка загрузки пользователей:", error);
+            if (error) {
+                console.error("Ошибка RLS:", error.message);
+                alert("Ошибка! Проверьте RLS политики.");
+            }
+        };
 
-            // 2. Настраиваем Presence (кто сейчас на сайте)
-            const channel = mySupabase.channel('online_room', {
+        async function init() {
+            // 1. Загружаем пользователей
+            let { data: users } = await supabaseClient.from('profiles').select('*').order('username');
+
+            // 2. Realtime (кто открыл вкладку)
+            const channel = supabaseClient.channel('presence-room', {
                 config: { presence: { key: MY_ID } }
             });
 
@@ -62,43 +67,42 @@
                     render(users, channel.presenceState());
                 })
                 .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, (payload) => {
-                    // Мгновенно обновляем текст статуса у всех
                     users = users.map(u => u.id === payload.new.id ? payload.new : u);
                     render(users, channel.presenceState());
                 })
                 .subscribe(async (status) => {
                     if (status === 'SUBSCRIBED') {
-                        await channel.track({ online: true });
+                        await channel.track({ active: true });
                     }
                 });
 
             render(users, {});
         }
 
-        function render(allUsers, onlineMap) {
-            const list = document.getElementById('group-list');
+        function render(users, onlineMap) {
+            const list = document.getElementById('groupList');
             const onlineIds = Object.keys(onlineMap);
 
-            list.innerHTML = allUsers.map(user => {
+            list.innerHTML = users.map(user => {
                 const isLive = onlineIds.includes(user.id);
                 return `
                     <div class="user-item">
-                        <div class="dot ${isLive ? 'online' : 'offline'}"></div>
+                        <div class="status-dot ${isLive ? 'online' : 'offline'}"></div>
                         <div style="flex-grow: 1;">
                             <strong>${user.username}</strong> 
                             ${user.email ? `<span class="email-label">(${user.email})</span>` : ''}
                             <br>
-                            <small>${user.status || 'Нет статуса'}</small>
+                            <small style="color: #666;">${user.status || 'Статус не задан'}</small>
                         </div>
                     </div>
                 `;
             }).join('');
 
-            const me = allUsers.find(u => u.id === MY_ID);
-            if (me) document.getElementById('my-info').innerHTML = `Вы зашли как: <b>${me.username}</b>`;
+            const me = users.find(u => u.id === MY_ID);
+            if (me) document.getElementById('myInfo').innerHTML = `Вы зашли как: <b>${me.username}</b>`;
         }
 
-        initApp();
+        init();
     </script>
 </body>
 </html>
