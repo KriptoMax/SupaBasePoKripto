@@ -8,55 +8,56 @@
         body { font-family: sans-serif; background-color: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; }
         .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 500px; margin-bottom: 20px; }
         .user-item { border-bottom: 1px solid #eee; padding: 10px 0; display: flex; align-items: center; }
-        .dot { height: 12px; width: 12px; border-radius: 50%; margin-right: 15px; }
-        .online { background-color: #28a745; box-shadow: 0 0 8px #28a745; } /* Зеленый - в сети */
-        .offline { background-color: #ccc; } /* Серый - не в сети */
+        .dot { height: 12px; width: 12px; border-radius: 50%; margin-right: 15px; border: 1px solid rgba(0,0,0,0.1); }
+        .online { background-color: #28a745; box-shadow: 0 0 8px #28a745; }
+        .offline { background-color: #ccc; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
         button { border: none; border-radius: 8px; padding: 12px; color: white; cursor: pointer; font-weight: bold; background: #007bff; }
-        .email-text { color: #888; font-size: 0.85rem; }
+        .email-text { color: #888; font-size: 0.85rem; font-weight: normal; }
     </style>
 </head>
 <body>
 
     <div class="card">
         <h2>Мой профиль</h2>
-        <p id="my-info">Загрузка...</p>
+        <p id="my-info">Подключение...</p>
         <div class="grid">
-            <button onclick="updateStatus('🟢 В сети')">Зайти в сеть</button>
-            <button style="background: #6c757d;" onclick="updateStatus('⚪ Не в сети')">Выйти из сети</button>
+            <button onclick="changeStatus('🟢 В сети')">Зайти в сеть</button>
+            <button style="background: #6c757d;" onclick="changeStatus('⚪ Не в сети')">Выйти из сети</button>
         </div>
     </div>
 
     <div class="card">
         <h2>Монитор группы</h2>
-        <div id="group-list">Загрузка пользователей...</div>
+        <div id="group-list">Загрузка...</div>
     </div>
 
     <script>
-        const URL = 'https://ntkqkvgbmhhwrxcdntqg.supabase.co';
-        const KEY = 'sb_publishable_Vf3rIV5OqOaDV73ZH3B6og_bYPzTusD';
+        // ИСПОЛЬЗУЕМ ОДНО ИМЯ ДЛЯ КЛИЕНТА
+        const client = supabase.createClient(
+            'https://ntkqkvgbmhhwrxcdntqg.supabase.co', 
+            'sb_publishable_Vf3rIV5OqOaDV73ZH3B6og_bYPzTusD'
+        );
+
         const MY_ID = '502d2c0d-5183-4170-832d-84afe341c5e3'; 
 
-        const supabaseClient = supabase.createClient(URL, KEY);
-
-        // Функция обновления ТЕКСТА статуса
-        async function updateStatus(txt) {
-            await supabaseClient.from('profiles').update({ status: txt }).eq('id', MY_ID);
+        // Функция обновления текста
+        async function changeStatus(txt) {
+            await client.from('profiles').update({ status: txt }).eq('id', MY_ID);
         }
 
-        async function start() {
-            // 1. Получаем начальный список
-            let { data: users } = await supabaseClient.from('profiles').select('*');
+        async function init() {
+            // 1. Загрузка данных
+            let { data: users } = await client.from('profiles').select('*');
 
-            // 2. Настраиваем канал "Живого присутствия"
-            const channel = supabaseClient.channel('presence-room', {
+            // 2. Realtime Presence (кто на сайте)
+            const channel = client.channel('room-1', {
                 config: { presence: { key: MY_ID } }
             });
 
             channel
                 .on('presence', { event: 'sync' }, () => {
-                    const onlineState = channel.presenceState();
-                    render(users, onlineState);
+                    render(users, channel.presenceState());
                 })
                 .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, (payload) => {
                     users = users.map(u => u.id === payload.new.id ? payload.new : u);
@@ -73,7 +74,7 @@
 
         function render(users, onlineData) {
             const list = document.getElementById('group-list');
-            const onlineIds = Object.keys(onlineData); // Кто сейчас открыл вкладку
+            const onlineIds = Object.keys(onlineData);
 
             list.innerHTML = users.map(user => {
                 const isLive = onlineIds.includes(user.id);
@@ -82,10 +83,10 @@
                         <div class="dot ${isLive ? 'online' : 'offline'}"></div>
                         <div style="flex-grow: 1;">
                             <strong>${user.username}</strong> 
-                            <span class="email-text">${user.email ? '| ' + user.email : ''}</span><br>
-                            <small>${user.status || 'Нет статуса'}</small>
+                            ${user.email ? `<span class="email-text">(${user.email})</span>` : ''}
+                            <br>
+                            <small>${user.status || 'Статус не задан'}</small>
                         </div>
-                        ${isLive ? '<small style="color:green">LIVE</small>' : ''}
                     </div>
                 `;
             }).join('');
@@ -94,7 +95,7 @@
             if (me) document.getElementById('my-info').innerHTML = `Вы зашли как: <b>${me.username}</b>`;
         }
 
-        start();
+        init();
     </script>
 </body>
 </html>
