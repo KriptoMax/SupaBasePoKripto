@@ -3,104 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SupaBase Monitor</title>
+    <title>SupaBase Realtime Monitor</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: sans-serif; background-color: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; }
         .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 500px; margin-bottom: 20px; }
-        h2 { margin-top: 0; font-size: 1.2rem; }
+        .user-item { border-bottom: 1px solid #eee; padding: 12px 0; display: flex; align-items: center; }
+        
+        /* Стили для индикатора сети */
+        .dot { height: 12px; width: 12px; border-radius: 50%; margin-right: 15px; transition: background 0.3s; }
+        .online { background-color: #28a745; box-shadow: 0 0 8px #28a745; }
+        .offline { background-color: #ccc; }
+        
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        button { border: none; border-radius: 8px; padding: 12px; color: white; cursor: pointer; font-weight: bold; }
+        .btn-status { background-color: #007bff; }
         
-        button { border: none; border-radius: 8px; padding: 12px; color: white; cursor: pointer; font-weight: bold; transition: opacity 0.2s; }
-        button:hover { opacity: 0.8; }
-        
-        .btn-study { background-color: #28a745; }
-        .btn-coffee { background-color: #ffc107; color: #333; }
-        .btn-game { background-color: #17a2b8; }
-        .btn-home { background-color: #6c757d; }
-
-        .user-item { border-bottom: 1px solid #eee; padding: 10px 0; display: flex; align-items: center; }
-        .dot { height: 12px; width: 12px; background-color: #28a745; border-radius: 50%; margin-right: 15px; }
+        .email-tag { font-size: 0.8rem; color: #888; margin-left: 5px; }
     </style>
 </head>
 <body>
 
     <div class="card">
         <h2>Мой профиль</h2>
-        <p id="my-info">Загрузка профиля...</p>
+        <p id="my-info">Подключение к системе...</p>
         <div class="grid">
-            <button class="btn-study" onclick="updateMyStatus('📚 Учусь')">📚 Учусь</button>
-            <button class="btn-coffee" onclick="updateMyStatus('☕ Кофе')">☕ Кофе</button>
-            <button class="btn-game" onclick="updateMyStatus('🎮 В игре')">🎮 В игре</button>
-            <button class="btn-home" onclick="updateMyStatus('🏠 Дома')">🏠 Дома</button>
+            <button class="btn-status" onclick="updateMyStatus('🟢 В сети')">Войти в сеть</button>
+            <button class="btn-status" style="background: #6c757d;" onclick="updateMyStatus('⚪ Не в сети')">Отойти</button>
         </div>
     </div>
 
     <div class="card">
-        <h2>Монитор группы</h2>
-        <div id="group-list">Загрузка списка...</div>
+        <h2>Кто на сайте прямо сейчас</h2>
+        <div id="group-list">Загрузка...</div>
     </div>
 
     <script>
-        // --- НАСТРОЙКИ (ПРОВЕРЬ СВОИ ДАННЫЕ) ---
         const SUPABASE_URL = 'https://ntkqkvgbmhhwrxcdntqg.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_Vf3rIV5OqOaDV73ZH3B6og_bYPzTusD'; // Используй anon/public key
-        const MY_USER_ID = '502d2c0d-5183-4170-832d-84afe341c5e3'; // Твой ID из таблицы
+        const SUPABASE_KEY = 'YOUR_ANON_KEY'; // Твой ключ
+        const MY_USER_ID = '502d2c0d-5183-4170-832d-84afe341c5e3'; 
 
         const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // Функция обновления статуса
-        async function updateMyStatus(newStatus) {
-            const { error } = await supabase
-                .from('profiles')
-                .update({ status: newStatus })
-                .eq('id', MY_USER_ID);
+        // Хранилище для тех, кто реально открыл страницу прямо сейчас
+        let onlineUsers = {};
 
-            if (error) {
-                alert('Ошибка при обновлении!');
-                console.error(error);
-            } else {
-                fetchGroup(); // Сразу обновляем список
-            }
+        async function updateMyStatus(newStatus) {
+            await supabase.from('profiles').update({ status: newStatus }).eq('id', MY_USER_ID);
         }
 
-        // Функция получения данных
-        async function fetchGroup() {
-            const { data, error } = await supabase
-                .from('profiles')
-                .select('*')
-                .order('username', { ascending: true });
+        async function initApp() {
+            // 1. Сначала загружаем всех из базы
+            const { data: allUsers } = await supabase.from('profiles').select('*').order('username');
+            
+            // 2. Настраиваем Presence (отслеживание «онлайн»)
+            const channel = supabase.channel('room_1');
 
-            if (error) {
-                console.error('Ошибка получения данных:', error);
-                return;
-            }
+            channel
+                .on('presence', { event: 'sync' }, () => {
+                    // Кто-то зашел или вышел — получаем актуальный список «живых» сессий
+                    onlineUsers = channel.presenceState();
+                    renderList(allUsers);
+                })
+                .subscribe(async (status) => {
+                    if (status === 'SUBSCRIBED') {
+                        // Как только мы подключились, сообщаем всем: "Я здесь!"
+                        await channel.track({
+                            user_id: MY_USER_ID,
+                            online_at: new Date().toISOString(),
+                        });
+                    }
+                });
 
+            // 3. Подписка на изменение СТАТУСОВ (текста) в реальном времени
+            supabase.channel('custom-all-channel')
+                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, payload => {
+                    // Если кто-то сменил текст статуса, обновляем список
+                    const index = allUsers.findIndex(u => u.id === payload.new.id);
+                    if (index !== -1) allUsers[index] = payload.new;
+                    renderList(allUsers);
+                })
+                .subscribe();
+
+            renderList(allUsers);
+        }
+
+        function renderList(users) {
             const listContainer = document.getElementById('group-list');
             
-            // Отрисовка списка
-            listContainer.innerHTML = data.map(user => `
+            // Проверяем, есть ли ID пользователя в списке активных сессий Presence
+            const isOnline = (id) => {
+                return Object.values(onlineUsers).flat().some(user => user.user_id === id);
+            };
+
+            listContainer.innerHTML = users.map(user => `
                 <div class="user-item">
-                    <div class="dot"></div>
+                    <div class="dot ${isOnline(user.id) ? 'online' : 'offline'}"></div>
                     <div style="flex-grow: 1;">
-                        <strong>${user.username}</strong><br>
-                        <small style="color: #666">${user.status || 'Нет статуса'}</small>
+                        <strong>${user.username}</strong> 
+                        <span class="email-tag">${user.email || ''}</span><br>
+                        <small>${user.status || 'Нет статуса'}</small>
                     </div>
+                    ${isOnline(user.id) ? '<b style="color:green; font-size:0.7rem;">LIVE</b>' : ''}
                 </div>
             `).join('');
 
-            // Обновление имени в шапке
-            const me = data.find(u => u.id === MY_USER_ID);
-            if (me) {
-                document.getElementById('my-info').innerHTML = `Вы зашли как: <strong>${me.username}</strong>`;
-            }
+            const me = users.find(u => u.id === MY_USER_ID);
+            if (me) document.getElementById('my-info').innerHTML = `Вы: <strong>${me.username}</strong>`;
         }
 
-        // Запуск при загрузке
-        fetchGroup();
-
-        // Обновление каждые 5 секунд
-        setInterval(fetchGroup, 5000);
+        initApp();
     </script>
 </body>
 </html>
