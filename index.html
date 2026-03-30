@@ -2,78 +2,73 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>SupaBase Live Monitor</title>
+    <title>SupaBase Monitor</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        .card { background: white; border-radius: 15px; padding: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 450px; margin-bottom: 20px; }
-        h2 { margin-top: 0; color: #333; font-size: 1.4rem; }
-        .user-item { border-bottom: 1px solid #eee; padding: 12px 0; display: flex; align-items: center; }
-        .user-item:last-child { border-bottom: none; }
-        .dot { height: 12px; width: 12px; border-radius: 50%; margin-right: 15px; flex-shrink: 0; }
-        .online { background-color: #2ecc71; box-shadow: 0 0 10px rgba(46, 204, 113, 0.4); }
-        .offline { background-color: #bdc3c7; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
-        button { border: none; border-radius: 10px; padding: 12px; color: white; cursor: pointer; font-weight: bold; font-size: 0.9rem; transition: transform 0.1s; }
-        button:active { transform: scale(0.95); }
-        .btn-on { background-color: #3498db; }
-        .btn-off { background-color: #95a5a6; }
-        .email-label { color: #7f8c8d; font-size: 0.8rem; font-weight: normal; }
+        body { font-family: sans-serif; background-color: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 500px; margin-bottom: 20px; }
+        .user-item { border-bottom: 1px solid #eee; padding: 10px 0; display: flex; align-items: center; }
+        .dot { height: 12px; width: 12px; border-radius: 50%; margin-right: 15px; }
+        .online { background-color: #28a745; box-shadow: 0 0 8px #28a745; }
+        .offline { background-color: #ccc; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        button { border: none; border-radius: 8px; padding: 12px; color: white; cursor: pointer; font-weight: bold; background: #007bff; }
+        .email-label { color: #888; font-size: 0.8rem; }
     </style>
 </head>
 <body>
 
     <div class="card">
         <h2>Мой профиль</h2>
-        <p id="my-info" style="color: #666;">Подключение к базе...</p>
+        <p id="my-info">Подключение к системе...</p>
         <div class="grid">
-            <button class="btn-on" onclick="sendUpdate('🟢 В сети')">Войти в сеть</button>
-            <button class="btn-off" onclick="sendUpdate('⚪ Не в сети')">Выйти из сети</button>
+            <button onclick="updateStatus('🟢 В сети')">Войти в сеть</button>
+            <button style="background: #6c757d;" onclick="updateStatus('⚪ Не в сети')">Отойти</button>
         </div>
     </div>
 
     <div class="card">
         <h2>Монитор группы</h2>
-        <div id="group-list" style="color: #999;">Загрузка списка...</div>
+        <div id="group-list">Загрузка списка...</div>
     </div>
 
     <script>
-        // Копируй эти данные ОЧЕНЬ внимательно (без лишних пробелов)
-        const S_URL = 'https://ntkqkvgbmhhwrxcdntqg.supabase.co';
-        const S_KEY = 'sb_publishable_Vf3rIV5OqOaDV73ZH3B6og_bYPzTusD';
-        const MY_ID = '502d2c0d-5183-4170-832d-84afe341c5e3';
+        // --- ПРОВЕРЬ ЭТИ ДАННЫЕ (БЕЗ ПРОБЕЛОВ ВНУТРИ) ---
+        const SB_URL = 'https://ntkqkvgbmhhwrxcdntqg.supabase.co';
+        const SB_KEY = 'sb_publishable_Vf3rIV5OqOaDV73ZH3B6og_bYPzTusD';
+        const MY_ID = '502d2c0d-5183-4170-832d-84afe341c5e3'; 
 
-        // Инициализация
-        const sb = supabase.createClient(S_URL, S_KEY);
+        // Инициализация (переименовал, чтобы не было конфликтов)
+        const mySupabase = supabase.createClient(SB_URL, SB_KEY);
 
-        // Функция смены статуса
-        async function sendUpdate(txt) {
-            const { error } = await sb.from('profiles').update({ status: txt }).eq('id', MY_ID);
-            if (error) console.error("Ошибка обновления:", error.message);
+        // Функция обновления статуса
+        async function updateStatus(txt) {
+            const { error } = await mySupabase.from('profiles').update({ status: txt }).eq('id', MY_ID);
+            if (error) console.error("Ошибка:", error.message);
         }
 
-        async function init() {
-            // 1. Первичная загрузка
-            let { data: users, error } = await sb.from('profiles').select('*');
-            if (error) {
-                console.error("Ошибка загрузки:", error.message);
-                return;
-            }
+        async function initApp() {
+            // 1. Получаем список всех из базы
+            let { data: users, error } = await mySupabase.from('profiles').select('*');
+            if (error) return console.error("Ошибка загрузки пользователей:", error);
 
-            // 2. Настройка Realtime и Presence
-            const room = sb.channel('main_room', { config: { presence: { key: MY_ID } } });
+            // 2. Настраиваем Presence (кто сейчас на сайте)
+            const channel = mySupabase.channel('online_room', {
+                config: { presence: { key: MY_ID } }
+            });
 
-            room
+            channel
                 .on('presence', { event: 'sync' }, () => {
-                    render(users, room.presenceState());
+                    render(users, channel.presenceState());
                 })
                 .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, (payload) => {
+                    // Мгновенно обновляем текст статуса у всех
                     users = users.map(u => u.id === payload.new.id ? payload.new : u);
-                    render(users, room.presenceState());
+                    render(users, channel.presenceState());
                 })
                 .subscribe(async (status) => {
                     if (status === 'SUBSCRIBED') {
-                        await room.track({ online: true });
+                        await channel.track({ online: true });
                     }
                 });
 
@@ -81,10 +76,10 @@
         }
 
         function render(allUsers, onlineMap) {
-            const container = document.getElementById('group-list');
+            const list = document.getElementById('group-list');
             const onlineIds = Object.keys(onlineMap);
 
-            container.innerHTML = allUsers.map(user => {
+            list.innerHTML = allUsers.map(user => {
                 const isLive = onlineIds.includes(user.id);
                 return `
                     <div class="user-item">
@@ -93,19 +88,17 @@
                             <strong>${user.username}</strong> 
                             ${user.email ? `<span class="email-label">(${user.email})</span>` : ''}
                             <br>
-                            <small style="color: #666;">${user.status || 'Статус не задан'}</small>
+                            <small>${user.status || 'Нет статуса'}</small>
                         </div>
                     </div>
                 `;
             }).join('');
 
             const me = allUsers.find(u => u.id === MY_ID);
-            if (me) {
-                document.getElementById('my-info').innerHTML = `Вы зашли как: <b>${me.username}</b>`;
-            }
+            if (me) document.getElementById('my-info').innerHTML = `Вы зашли как: <b>${me.username}</b>`;
         }
 
-        init();
+        initApp();
     </script>
 </body>
 </html>
