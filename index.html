@@ -2,117 +2,99 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SupaBase Realtime Monitor</title>
+    <title>SupaBase Live Monitor</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        body { font-family: sans-serif; background-color: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; }
         .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 500px; margin-bottom: 20px; }
-        .user-item { border-bottom: 1px solid #eee; padding: 12px 0; display: flex; align-items: center; }
-        
-        /* Стили для индикатора сети */
-        .dot { height: 12px; width: 12px; border-radius: 50%; margin-right: 15px; transition: background 0.3s; }
-        .online { background-color: #28a745; box-shadow: 0 0 8px #28a745; }
-        .offline { background-color: #ccc; }
-        
+        .user-item { border-bottom: 1px solid #eee; padding: 10px 0; display: flex; align-items: center; }
+        .dot { height: 12px; width: 12px; border-radius: 50%; margin-right: 15px; }
+        .online { background-color: #28a745; box-shadow: 0 0 8px #28a745; } /* Зеленый - в сети */
+        .offline { background-color: #ccc; } /* Серый - не в сети */
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-        button { border: none; border-radius: 8px; padding: 12px; color: white; cursor: pointer; font-weight: bold; }
-        .btn-status { background-color: #007bff; }
-        
-        .email-tag { font-size: 0.8rem; color: #888; margin-left: 5px; }
+        button { border: none; border-radius: 8px; padding: 12px; color: white; cursor: pointer; font-weight: bold; background: #007bff; }
+        .email-text { color: #888; font-size: 0.85rem; }
     </style>
 </head>
 <body>
 
     <div class="card">
         <h2>Мой профиль</h2>
-        <p id="my-info">Подключение к системе...</p>
+        <p id="my-info">Загрузка...</p>
         <div class="grid">
-            <button class="btn-status" onclick="updateMyStatus('🟢 В сети')">Войти в сеть</button>
-            <button class="btn-status" style="background: #6c757d;" onclick="updateMyStatus('⚪ Не в сети')">Отойти</button>
+            <button onclick="updateStatus('🟢 В сети')">Зайти в сеть</button>
+            <button style="background: #6c757d;" onclick="updateStatus('⚪ Не в сети')">Выйти из сети</button>
         </div>
     </div>
 
     <div class="card">
-        <h2>Кто на сайте прямо сейчас</h2>
-        <div id="group-list">Загрузка...</div>
+        <h2>Монитор группы</h2>
+        <div id="group-list">Загрузка пользователей...</div>
     </div>
 
     <script>
-        const SUPABASE_URL = 'https://ntkqkvgbmhhwrxcdntqg.supabase.co';
-        const SUPABASE_KEY = 'YOUR_ANON_KEY'; // Твой ключ
-        const MY_USER_ID = '502d2c0d-5183-4170-832d-84afe341c5e3'; 
+        const URL = 'https://ntkqkvgbmhhwrxcdntqg.supabase.co';
+        const KEY = 'sb_publishable_Vf3rIV5OqOaDV73ZH3B6og_bYPzTusD';
+        const MY_ID = '502d2c0d-5183-4170-832d-84afe341c5e3'; 
 
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const supabaseClient = supabase.createClient(URL, KEY);
 
-        // Хранилище для тех, кто реально открыл страницу прямо сейчас
-        let onlineUsers = {};
-
-        async function updateMyStatus(newStatus) {
-            await supabase.from('profiles').update({ status: newStatus }).eq('id', MY_USER_ID);
+        // Функция обновления ТЕКСТА статуса
+        async function updateStatus(txt) {
+            await supabaseClient.from('profiles').update({ status: txt }).eq('id', MY_ID);
         }
 
-        async function initApp() {
-            // 1. Сначала загружаем всех из базы
-            const { data: allUsers } = await supabase.from('profiles').select('*').order('username');
-            
-            // 2. Настраиваем Presence (отслеживание «онлайн»)
-            const channel = supabase.channel('room_1');
+        async function start() {
+            // 1. Получаем начальный список
+            let { data: users } = await supabaseClient.from('profiles').select('*');
+
+            // 2. Настраиваем канал "Живого присутствия"
+            const channel = supabaseClient.channel('presence-room', {
+                config: { presence: { key: MY_ID } }
+            });
 
             channel
                 .on('presence', { event: 'sync' }, () => {
-                    // Кто-то зашел или вышел — получаем актуальный список «живых» сессий
-                    onlineUsers = channel.presenceState();
-                    renderList(allUsers);
+                    const onlineState = channel.presenceState();
+                    render(users, onlineState);
+                })
+                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, (payload) => {
+                    users = users.map(u => u.id === payload.new.id ? payload.new : u);
+                    render(users, channel.presenceState());
                 })
                 .subscribe(async (status) => {
                     if (status === 'SUBSCRIBED') {
-                        // Как только мы подключились, сообщаем всем: "Я здесь!"
-                        await channel.track({
-                            user_id: MY_USER_ID,
-                            online_at: new Date().toISOString(),
-                        });
+                        await channel.track({ active: true });
                     }
                 });
 
-            // 3. Подписка на изменение СТАТУСОВ (текста) в реальном времени
-            supabase.channel('custom-all-channel')
-                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, payload => {
-                    // Если кто-то сменил текст статуса, обновляем список
-                    const index = allUsers.findIndex(u => u.id === payload.new.id);
-                    if (index !== -1) allUsers[index] = payload.new;
-                    renderList(allUsers);
-                })
-                .subscribe();
-
-            renderList(allUsers);
+            render(users, {});
         }
 
-        function renderList(users) {
-            const listContainer = document.getElementById('group-list');
-            
-            // Проверяем, есть ли ID пользователя в списке активных сессий Presence
-            const isOnline = (id) => {
-                return Object.values(onlineUsers).flat().some(user => user.user_id === id);
-            };
+        function render(users, onlineData) {
+            const list = document.getElementById('group-list');
+            const onlineIds = Object.keys(onlineData); // Кто сейчас открыл вкладку
 
-            listContainer.innerHTML = users.map(user => `
-                <div class="user-item">
-                    <div class="dot ${isOnline(user.id) ? 'online' : 'offline'}"></div>
-                    <div style="flex-grow: 1;">
-                        <strong>${user.username}</strong> 
-                        <span class="email-tag">${user.email || ''}</span><br>
-                        <small>${user.status || 'Нет статуса'}</small>
+            list.innerHTML = users.map(user => {
+                const isLive = onlineIds.includes(user.id);
+                return `
+                    <div class="user-item">
+                        <div class="dot ${isLive ? 'online' : 'offline'}"></div>
+                        <div style="flex-grow: 1;">
+                            <strong>${user.username}</strong> 
+                            <span class="email-text">${user.email ? '| ' + user.email : ''}</span><br>
+                            <small>${user.status || 'Нет статуса'}</small>
+                        </div>
+                        ${isLive ? '<small style="color:green">LIVE</small>' : ''}
                     </div>
-                    ${isOnline(user.id) ? '<b style="color:green; font-size:0.7rem;">LIVE</b>' : ''}
-                </div>
-            `).join('');
+                `;
+            }).join('');
 
-            const me = users.find(u => u.id === MY_USER_ID);
-            if (me) document.getElementById('my-info').innerHTML = `Вы: <strong>${me.username}</strong>`;
+            const me = users.find(u => u.id === MY_ID);
+            if (me) document.getElementById('my-info').innerHTML = `Вы зашли как: <b>${me.username}</b>`;
         }
 
-        initApp();
+        start();
     </script>
 </body>
 </html>
