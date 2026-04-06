@@ -2,8 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Status Monitor | Монитор статусов</title>
+    <title>Status Monitor</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
@@ -13,7 +12,7 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
@@ -23,9 +22,8 @@
         }
 
         .container {
-            max-width: 700px;
+            max-width: 600px;
             width: 100%;
-            margin: 0 auto;
         }
 
         .card {
@@ -34,28 +32,12 @@
             padding: 28px;
             margin-bottom: 24px;
             box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.2);
-            transition: transform 0.2s ease;
-        }
-
-        .card:hover {
-            transform: translateY(-2px);
         }
 
         .card h2 {
-            font-size: 1.6rem;
+            font-size: 1.5rem;
             margin-bottom: 20px;
             color: #1a1a2e;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .card h2::before {
-            content: '';
-            width: 4px;
-            height: 24px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            border-radius: 2px;
         }
 
         .profile-info {
@@ -66,21 +48,10 @@
             border: 1px solid #e9ecef;
         }
 
-        .profile-info p {
-            font-size: 1.1rem;
-            color: #2c3e50;
-        }
-
-        .profile-info b {
-            color: #667eea;
-            font-size: 1.2rem;
-        }
-
         .status-buttons {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 15px;
-            margin-top: 5px;
         }
 
         .btn {
@@ -96,43 +67,10 @@
 
         .btn-online {
             background: linear-gradient(135deg, #28a745, #20c997);
-            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
-        }
-
-        .btn-online:hover {
-            transform: scale(1.02);
-            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
         }
 
         .btn-offline {
             background: linear-gradient(135deg, #6c757d, #495057);
-            box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
-        }
-
-        .btn-offline:hover {
-            transform: scale(1.02);
-            box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
-        }
-
-        .btn-google {
-            background: linear-gradient(135deg, #4285f4, #34a853);
-            box-shadow: 0 4px 15px rgba(66, 133, 244, 0.3);
-            margin-bottom: 15px;
-        }
-
-        .btn-google:hover {
-            transform: scale(1.02);
-            box-shadow: 0 6px 20px rgba(66, 133, 244, 0.4);
-        }
-
-        .btn-logout {
-            background: linear-gradient(135deg, #dc3545, #c82333);
-            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
-        }
-
-        .btn-logout:hover {
-            transform: scale(1.02);
-            box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
         }
 
         .user-list {
@@ -145,20 +83,13 @@
             align-items: center;
             padding: 14px 0;
             border-bottom: 1px solid #edf2f7;
-            transition: background 0.2s ease;
-        }
-
-        .user-item:hover {
-            background: #fafbff;
-            padding-left: 8px;
         }
 
         .status-dot {
-            width: 14px;
-            height: 14px;
+            width: 12px;
+            height: 12px;
             border-radius: 50%;
-            margin-right: 18px;
-            transition: all 0.2s ease;
+            margin-right: 16px;
         }
 
         .online {
@@ -168,29 +99,18 @@
         }
 
         @keyframes pulse {
-            0% {
-                box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.4);
-            }
-            70% {
-                box-shadow: 0 0 0 6px rgba(40, 167, 69, 0);
-            }
-            100% {
-                box-shadow: 0 0 0 0 rgba(40, 167, 69, 0);
-            }
+            0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.4); }
+            70% { box-shadow: 0 0 0 6px rgba(40, 167, 69, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
         }
 
         .offline {
             background-color: #adb5bd;
         }
 
-        .user-info {
-            flex-grow: 1;
-        }
-
         .user-name {
             font-weight: 600;
             color: #1a1a2e;
-            font-size: 1rem;
             display: flex;
             align-items: center;
             gap: 8px;
@@ -199,8 +119,7 @@
 
         .email-label {
             color: #868e96;
-            font-size: 0.75rem;
-            font-weight: normal;
+            font-size: 0.7rem;
             background: #f1f3f5;
             padding: 2px 8px;
             border-radius: 12px;
@@ -210,39 +129,23 @@
             font-size: 0.8rem;
             color: #6c757d;
             margin-top: 4px;
-            display: block;
         }
 
-        .online-badge {
+        .badge {
+            font-size: 0.65rem;
+            padding: 2px 8px;
+            border-radius: 20px;
+            margin-left: 8px;
+        }
+
+        .badge-online {
             background: #28a745;
             color: white;
-            font-size: 0.65rem;
-            padding: 2px 8px;
-            border-radius: 20px;
-            margin-left: 8px;
         }
 
-        .offline-badge {
+        .badge-offline {
             background: #adb5bd;
             color: white;
-            font-size: 0.65rem;
-            padding: 2px 8px;
-            border-radius: 20px;
-            margin-left: 8px;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 40px;
-            color: #adb5bd;
-        }
-
-        .error-state {
-            text-align: center;
-            padding: 40px;
-            color: #dc3545;
-            background: #fff5f5;
-            border-radius: 16px;
         }
 
         .footer-note {
@@ -251,434 +154,198 @@
             color: rgba(255,255,255,0.7);
             margin-top: 20px;
         }
-
-        .login-container {
-            text-align: center;
-            padding: 40px 20px;
-        }
-
-        .user-avatar {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            margin-right: 15px;
-            object-fit: cover;
-        }
-
-        .user-header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
-        .hidden {
-            display: none;
-        }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Блок для неавторизованных пользователей -->
-        <div id="loginBlock" class="card">
-            <div class="login-container">
-                <h2 style="margin-bottom: 20px;">🔐 Добро пожаловать!</h2>
-                <p style="margin-bottom: 30px; color: #6c757d;">Войдите через Google, чтобы продолжить</p>
-                <button class="btn btn-google" id="googleLoginBtn" style="width: 100%;">
-                    🚀 Войти через Google
-                </button>
+        <div class="card">
+            <h2>👤 Мой профиль</h2>
+            <div class="profile-info" id="myInfo">
+                <p>Загрузка данных...</p>
+            </div>
+            <div class="status-buttons">
+                <button class="btn btn-online" id="btnOnline">🟢 В сети</button>
+                <button class="btn btn-offline" id="btnOffline">⚪ Не в сети</button>
             </div>
         </div>
 
-        <!-- Блок для авторизованных пользователей (изначально скрыт) -->
-        <div id="appBlock" class="hidden">
-            <div class="card">
-                <div class="user-header">
-                    <img id="userAvatar" class="user-avatar" src="" alt="Avatar">
-                    <div style="flex: 1;">
-                        <h2 style="margin-bottom: 5px;">👤 Мой профиль</h2>
-                        <button id="logoutBtn" class="btn btn-logout" style="padding: 8px 16px; font-size: 0.85rem; margin-top: 5px;">
-                            🚪 Выйти
-                        </button>
-                    </div>
-                </div>
-                <div class="profile-info" id="myInfo">
-                    <p>Загрузка данных...</p>
-                </div>
-                <div class="status-buttons">
-                    <button class="btn btn-online" id="btnOnline">
-                        🟢 В сети
-                    </button>
-                    <button class="btn btn-offline" id="btnOffline">
-                        ⚪ Не в сети
-                    </button>
-                </div>
+        <div class="card">
+            <h2>👥 Монитор группы</h2>
+            <div id="groupList" class="user-list">
+                <div class="empty-state" style="text-align: center; padding: 40px; color: #adb5bd;">Загрузка участников...</div>
             </div>
-
-            <div class="card">
-                <h2>👥 Монитор группы</h2>
-                <div id="groupList" class="user-list">
-                    <div class="empty-state">Загрузка участников...</div>
-                </div>
-            </div>
-            <div class="footer-note">
-                ⚡ Статус обновляется в реальном времени • Зелёная точка — пользователь онлайн
-            </div>
+        </div>
+        <div class="footer-note">
+            ⚡ Статус обновляется в реальном времени • Зелёная точка — пользователь онлайн
         </div>
     </div>
 
     <script>
-        (function() {
-            // ========== ВАШИ ДАННЫЕ ИЗ SUPABASE ==========
-            const SUPABASE_URL = 'https://ntkqkvgbmhhwrxcdntqg.supabase.co';
-            const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50a3FrdmdibWhod3J4Y2RudHFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3Njg4NzQsImV4cCI6MjA4ODM0NDg3NH0.hMjEh6iJu4FBA24Ji4q7gCQ14vAx7C1EOGv4gkksQRQ';
+        // Конфигурация Supabase (НЕ МЕНЯТЬ!)
+        const SUPABASE_URL = 'https://ntkqkvgbmhhwrxcdntqg.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50a3FrdmdibWhod3J4Y2RudHFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3Njg4NzQsImV4cCI6MjA4ODM0NDg3NH0.hMjEh6iJu4FBA24Ji4q7gCQ14vAx7C1EOGv4gkksQRQ';
+        const MY_USER_ID = '502d2c0d-5183-4170-832d-84afe341c5e3';
+
+        const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        let allUsers = [];
+        let onlineUsers = {};
+
+        // Смена статуса
+        async function changeStatus(status) {
+            try {
+                const { error } = await supabase
+                    .from('profiles')
+                    .update({ status: status, updated_at: new Date().toISOString() })
+                    .eq('id', MY_USER_ID);
+                
+                if (error) throw error;
+                console.log('✅ Статус изменён на:', status);
+            } catch (error) {
+                console.error('❌ Ошибка:', error);
+                alert('Ошибка: ' + error.message);
+            }
+        }
+
+        // Отображение списка пользователей
+        function renderUserList() {
+            const container = document.getElementById('groupList');
+            if (!container) return;
             
-            // Инициализация клиента Supabase
-            const _supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-            
-            // Глобальные переменные
-            let allUsers = [];
-            let currentOnlineUsers = {};
-            let currentUser = null;
-            let presenceChannel = null;
-            
-            // DOM элементы
-            const loginBlock = document.getElementById('loginBlock');
-            const appBlock = document.getElementById('appBlock');
-            const googleLoginBtn = document.getElementById('googleLoginBtn');
-            const logoutBtn = document.getElementById('logoutBtn');
-            
-            // Функция для создания или обновления профиля пользователя
-            async function createOrUpdateProfile(user) {
-                try {
-                    // Проверяем, существует ли профиль
-                    const { data: existingProfile, error: fetchError } = await _supabase
-                        .from('profiles')
-                        .select('*')
-                        .eq('id', user.id)
-                        .maybeSingle();
-                    
-                    const profileData = {
-                        id: user.id,
-                        email: user.email,
-                        username: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Пользователь',
-                        avatar_url: user.user_metadata?.avatar_url || '',
-                        status: '🟢 В сети | Активен',
-                        updated_at: new Date().toISOString()
-                    };
-                    
-                    if (!existingProfile) {
-                        // Создаем новый профиль
-                        const { error: insertError } = await _supabase
-                            .from('profiles')
-                            .insert([profileData]);
-                        
-                        if (insertError) {
-                            console.error('Ошибка создания профиля:', insertError);
-                        } else {
-                            console.log('✅ Профиль создан');
-                        }
-                    } else {
-                        // Обновляем существующий профиль
-                        const { error: updateError } = await _supabase
-                            .from('profiles')
-                            .update({
-                                username: profileData.username,
-                                avatar_url: profileData.avatar_url,
-                                updated_at: profileData.updated_at
-                            })
-                            .eq('id', user.id);
-                        
-                        if (updateError) {
-                            console.error('Ошибка обновления профиля:', updateError);
-                        }
-                    }
-                } catch (error) {
-                    console.error('Ошибка в createOrUpdateProfile:', error);
-                }
+            if (!allUsers || allUsers.length === 0) {
+                container.innerHTML = '<div style="text-align: center; padding: 40px; color: #adb5bd;">👀 Пользователей пока нет</div>';
+                return;
             }
             
-            // Функция для смены статуса
-            async function changeStatus(newStatusText) {
-                if (!currentUser) return;
-                
-                try {
-                    console.log('🔄 Меняем статус на:', newStatusText);
-                    
-                    const { error } = await _supabase
-                        .from('profiles')
-                        .update({ 
-                            status: newStatusText,
-                            updated_at: new Date().toISOString()
-                        })
-                        .eq('id', currentUser.id);
-                    
-                    if (error) {
-                        console.error('❌ Ошибка при обновлении статуса:', error);
-                        alert('Ошибка: ' + error.message);
-                    } else {
-                        console.log('✅ Статус успешно обновлён');
-                        const myInfoBlock = document.getElementById('myInfo');
-                        if (myInfoBlock) {
-                            myInfoBlock.style.background = '#e8f5e9';
-                            setTimeout(() => {
-                                myInfoBlock.style.background = '#f8f9ff';
-                            }, 300);
-                        }
-                    }
-                } catch (err) {
-                    console.error('❌ Неожиданная ошибка:', err);
-                    alert('Произошла ошибка: ' + err.message);
-                }
-            }
+            const onlineIds = new Set(Object.keys(onlineUsers));
             
-            // Функция для отображения списка пользователей
-            function renderUserList(users, onlinePresence) {
-                const container = document.getElementById('groupList');
-                if (!container) return;
+            const sortedUsers = [...allUsers].sort((a, b) => {
+                const aOnline = onlineIds.has(a.id);
+                const bOnline = onlineIds.has(b.id);
+                if (aOnline && !bOnline) return -1;
+                if (!aOnline && bOnline) return 1;
+                return (a.username || '').localeCompare(b.username || '');
+            });
+            
+            const html = sortedUsers.map(user => {
+                const isOnline = onlineIds.has(user.id);
+                const isMe = user.id === MY_USER_ID;
                 
-                if (!users || users.length === 0) {
-                    container.innerHTML = '<div class="empty-state">👀 Пользователей пока нет</div>';
-                    return;
-                }
-                
-                const onlineUserIds = new Set(Object.keys(onlinePresence || {}));
-                
-                const sortedUsers = [...users].sort((a, b) => {
-                    const aOnline = onlineUserIds.has(a.id);
-                    const bOnline = onlineUserIds.has(b.id);
-                    if (aOnline && !bOnline) return -1;
-                    if (!aOnline && bOnline) return 1;
-                    return (a.username || '').localeCompare(b.username || '');
-                });
-                
-                const html = sortedUsers.map(user => {
-                    const isOnline = onlineUserIds.has(user.id);
-                    const statusText = user.status || '😴 Статус не указан';
-                    const userName = user.username || 'Без имени';
-                    const userEmail = user.email || '';
-                    const isCurrentUser = currentUser && user.id === currentUser.id;
-                    
-                    return `
-                        <div class="user-item">
-                            <div class="status-dot ${isOnline ? 'online' : 'offline'}"></div>
-                            <div class="user-info">
-                                <div class="user-name">
-                                    ${escapeHtml(userName)} ${isCurrentUser ? '(Вы)' : ''}
-                                    ${userEmail ? `<span class="email-label">${escapeHtml(userEmail)}</span>` : ''}
-                                    <span class="${isOnline ? 'online-badge' : 'offline-badge'}">
-                                        ${isOnline ? '● Online' : '○ Offline'}
-                                    </span>
-                                </div>
-                                <div class="status-text">
-                                    📝 ${escapeHtml(statusText)}
-                                </div>
+                return `
+                    <div class="user-item">
+                        <div class="status-dot ${isOnline ? 'online' : 'offline'}"></div>
+                        <div class="user-info" style="flex: 1;">
+                            <div class="user-name">
+                                ${escapeHtml(user.username || 'Без имени')} ${isMe ? '(Вы)' : ''}
+                                ${user.email ? `<span class="email-label">${escapeHtml(user.email)}</span>` : ''}
+                                <span class="badge ${isOnline ? 'badge-online' : 'badge-offline'}">
+                                    ${isOnline ? '● Online' : '○ Offline'}
+                                </span>
+                            </div>
+                            <div class="status-text">
+                                📝 ${escapeHtml(user.status || 'Статус не указан')}
                             </div>
                         </div>
+                    </div>
+                `;
+            }).join('');
+            
+            container.innerHTML = html;
+        }
+        
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+        
+        function updateMyProfileInfo() {
+            const myProfile = allUsers.find(u => u.id === MY_USER_ID);
+            const myInfoDiv = document.getElementById('myInfo');
+            
+            if (myInfoDiv) {
+                if (myProfile) {
+                    myInfoDiv.innerHTML = `
+                        <p>
+                            ✨ Вы вошли как: <b>${escapeHtml(myProfile.username)}</b><br>
+                            <span style="font-size: 0.9rem; color: #667eea;">
+                                📍 Текущий статус: ${escapeHtml(myProfile.status || 'Не задан')}
+                            </span>
+                        </p>
                     `;
-                }).join('');
-                
-                container.innerHTML = html;
-            }
-            
-            function escapeHtml(str) {
-                if (!str) return '';
-                return str
-                    .replace(/&/g, '&amp;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;')
-                    .replace(/"/g, '&quot;')
-                    .replace(/'/g, '&#39;');
-            }
-            
-            function updateMyProfileInfo(users) {
-                if (!currentUser) return;
-                
-                const myProfile = users.find(u => u.id === currentUser.id);
-                const myInfoDiv = document.getElementById('myInfo');
-                const avatarImg = document.getElementById('userAvatar');
-                
-                if (myInfoDiv) {
-                    if (myProfile) {
-                        myInfoDiv.innerHTML = `
-                            <p>
-                                ✨ Вы вошли как: <b>${escapeHtml(myProfile.username)}</b><br>
-                                <span style="font-size: 0.9rem; color: #667eea;">
-                                    📧 ${escapeHtml(currentUser.email)}<br>
-                                    📍 Текущий статус: ${escapeHtml(myProfile.status || 'Не задан')}
-                                </span>
-                            </p>
-                        `;
-                        
-                        if (avatarImg && currentUser.user_metadata?.avatar_url) {
-                            avatarImg.src = currentUser.user_metadata.avatar_url;
-                        }
-                    } else {
-                        myInfoDiv.innerHTML = `
-                            <p style="color: #dc3545;">
-                                ⚠️ Ваш профиль не найден в таблице!<br>
-                                <small>Пожалуйста, обновите страницу</small>
-                            </p>
-                        `;
-                    }
+                } else {
+                    myInfoDiv.innerHTML = `
+                        <p style="color: #dc3545;">
+                            ⚠️ Ваш профиль не найден!<br>
+                            <small>Выполните SQL запрос из инструкции</small>
+                        </p>
+                    `;
                 }
             }
-            
-            // Функция выхода
-            async function logout() {
-                try {
-                    if (presenceChannel) {
-                        await presenceChannel.untrack();
-                        await presenceChannel.unsubscribe();
-                    }
-                    
-                    const { error } = await _supabase.auth.signOut();
-                    if (error) throw error;
-                    
-                    loginBlock.classList.remove('hidden');
-                    appBlock.classList.add('hidden');
-                    currentUser = null;
-                    
-                    console.log('✅ Выход выполнен');
-                } catch (error) {
-                    console.error('Ошибка при выходе:', error.message);
-                    alert('Ошибка при выходе: ' + error.message);
-                }
-            }
-            
-            // Функция инициализации приложения для авторизованного пользователя
-            async function initApp(user) {
-                currentUser = user;
+        }
+
+        // Инициализация
+        async function init() {
+            try {
+                console.log('🚀 Инициализация...');
                 
-                await createOrUpdateProfile(user);
-                
-                const { data: usersData, error: usersError } = await _supabase
+                // Загружаем пользователей
+                const { data: users, error } = await supabase
                     .from('profiles')
-                    .select('*')
-                    .order('username', { ascending: true });
+                    .select('*');
                 
-                if (usersError) {
-                    console.error('Ошибка загрузки пользователей:', usersError);
-                    document.getElementById('groupList').innerHTML = `
-                        <div class="error-state">
-                            ❌ Ошибка загрузки: ${usersError.message}
-                        </div>
-                    `;
-                    return;
-                }
+                if (error) throw error;
                 
-                allUsers = usersData || [];
+                allUsers = users || [];
                 console.log(`✅ Загружено ${allUsers.length} пользователей`);
                 
-                if (presenceChannel) {
-                    await presenceChannel.unsubscribe();
-                }
-                
-                presenceChannel = _supabase.channel('group-monitor', {
-                    config: { presence: { key: user.id } }
+                // Настройка Realtime Presence
+                const channel = supabase.channel('monitor', {
+                    config: { presence: { key: MY_USER_ID } }
                 });
                 
-                presenceChannel.on('presence', { event: 'sync' }, () => {
-                    currentOnlineUsers = presenceChannel.presenceState();
-                    renderUserList(allUsers, currentOnlineUsers);
+                channel.on('presence', { event: 'sync' }, () => {
+                    onlineUsers = channel.presenceState();
+                    renderUserList();
                 });
                 
-                presenceChannel.on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, (payload) => {
+                channel.on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, (payload) => {
                     const index = allUsers.findIndex(u => u.id === payload.new.id);
                     if (index !== -1) {
                         allUsers[index] = payload.new;
                     }
-                    renderUserList(allUsers, currentOnlineUsers);
-                    updateMyProfileInfo(allUsers);
+                    renderUserList();
+                    updateMyProfileInfo();
                 });
                 
-                await presenceChannel.subscribe();
-                await presenceChannel.track({ 
-                    user_id: user.id, 
-                    online_at: new Date().toISOString(),
-                    email: user.email
-                });
+                await channel.subscribe();
+                await channel.track({ user_id: MY_USER_ID, online_at: new Date().toISOString() });
                 
-                renderUserList(allUsers, {});
-                updateMyProfileInfo(allUsers);
+                renderUserList();
+                updateMyProfileInfo();
                 
-                const btnOnline = document.getElementById('btnOnline');
-                const btnOffline = document.getElementById('btnOffline');
-                if (btnOnline) btnOnline.onclick = () => changeStatus('🟢 В сети | Активен');
-                if (btnOffline) btnOffline.onclick = () => changeStatus('⚪ Не в сети | Отошёл');
-                
-                console.log('✅ Инициализация приложения завершена!');
+                console.log('✅ Инициализация завершена!');
+            } catch (error) {
+                console.error('❌ Ошибка:', error);
+                document.getElementById('groupList').innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #dc3545; background: #fff5f5; border-radius: 16px;">
+                        💥 Ошибка: ${error.message}<br><br>
+                        <small>Проверьте что таблица profiles создана и RLS настроены</small>
+                    </div>
+                `;
             }
-            
-            // Функция входа через Google
-            async function signInWithGoogle() {
-                try {
-                    console.log('🔄 Начинаем вход через Google...');
-                    const { data, error } = await _supabase.auth.signInWithOAuth({
-                        provider: 'google',
-                        options: {
-                            redirectTo: window.location.origin,
-                        }
-                    });
-                    
-                    if (error) throw error;
-                    console.log('✅ Перенаправление на Google...');
-                } catch (error) {
-                    console.error('Ошибка входа:', error.message);
-                    alert('Не удалось войти: ' + error.message);
-                }
-            }
-            
-            // Проверка сессии при загрузке страницы
-            async function checkSession() {
-                try {
-                    const { data: { session }, error } = await _supabase.auth.getSession();
-                    
-                    if (error) throw error;
-                    
-                    if (session) {
-                        console.log('✅ Сессия найдена, пользователь:', session.user.email);
-                        loginBlock.classList.add('hidden');
-                        appBlock.classList.remove('hidden');
-                        await initApp(session.user);
-                    } else {
-                        console.log('❌ Нет активной сессии');
-                        loginBlock.classList.remove('hidden');
-                        appBlock.classList.add('hidden');
-                    }
-                } catch (error) {
-                    console.error('Ошибка проверки сессии:', error);
-                    loginBlock.classList.remove('hidden');
-                    appBlock.classList.add('hidden');
-                }
-            }
-            
-            // Слушаем изменения состояния аутентификации
-            _supabase.auth.onAuthStateChange(async (event, session) => {
-                console.log('Auth state changed:', event);
-                
-                if (event === 'SIGNED_IN' && session) {
-                    loginBlock.classList.add('hidden');
-                    appBlock.classList.remove('hidden');
-                    await initApp(session.user);
-                } else if (event === 'SIGNED_OUT') {
-                    loginBlock.classList.remove('hidden');
-                    appBlock.classList.add('hidden');
-                    currentUser = null;
-                }
-            });
-            
-            // Назначаем обработчики событий
-            if (googleLoginBtn) {
-                googleLoginBtn.onclick = signInWithGoogle;
-            }
-            
-            if (logoutBtn) {
-                logoutBtn.onclick = logout;
-            }
-            
-            // Запускаем проверку сессии
-            checkSession();
-        })();
+        }
+        
+        // Кнопки
+        document.getElementById('btnOnline').onclick = () => changeStatus('🟢 В сети | Активен');
+        document.getElementById('btnOffline').onclick = () => changeStatus('⚪ Не в сети | Отошёл');
+        
+        // Запуск
+        init();
     </script>
 </body>
 </html>
