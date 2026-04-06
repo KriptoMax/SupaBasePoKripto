@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Status Monitor</title>
+    <title>Status Monitor | Монитор статусов</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
@@ -23,7 +23,7 @@
         }
 
         .container {
-            max-width: 600px;
+            max-width: 650px;
             width: 100%;
         }
 
@@ -39,6 +39,9 @@
             font-size: 1.5rem;
             margin-bottom: 20px;
             color: #1a1a2e;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .profile-info {
@@ -83,7 +86,7 @@
         }
 
         .user-list {
-            max-height: 500px;
+            max-height: 400px;
             overflow-y: auto;
         }
 
@@ -171,10 +174,102 @@
             background: #fff5f5;
             border-radius: 16px;
         }
+
+        /* Стили для счетчика времени */
+        .timer-card {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+        }
+
+        .timer-display {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .timer-value {
+            font-size: 3rem;
+            font-weight: bold;
+            font-family: monospace;
+            letter-spacing: 5px;
+        }
+
+        .timer-label {
+            font-size: 0.85rem;
+            color: #a0a0a0;
+            margin-top: 10px;
+        }
+
+        .timer-controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .timer-btn {
+            border: none;
+            border-radius: 12px;
+            padding: 10px 20px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .timer-start {
+            background: #28a745;
+            color: white;
+        }
+
+        .timer-pause {
+            background: #ffc107;
+            color: #1a1a2e;
+        }
+
+        .timer-reset {
+            background: #dc3545;
+            color: white;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat-card {
+            background: #f8f9ff;
+            border-radius: 16px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .online-count {
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            margin-left: 10px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- Карточка профиля -->
         <div class="card">
             <h2>👤 Мой профиль</h2>
             <div class="profile-info" id="myInfo">
@@ -186,12 +281,51 @@
             </div>
         </div>
 
+        <!-- Карточка счетчика времени учебы -->
+        <div class="card timer-card">
+            <h2>📚 Время учебы</h2>
+            <div class="timer-display">
+                <div class="timer-value" id="timerDisplay">00:00:00</div>
+                <div class="timer-label">Время, проведенное за учебой сегодня</div>
+            </div>
+            <div class="timer-controls">
+                <button class="timer-btn timer-start" id="timerStart">▶ Старт</button>
+                <button class="timer-btn timer-pause" id="timerPause">⏸ Пауза</button>
+                <button class="timer-btn timer-reset" id="timerReset">🔄 Сброс</button>
+            </div>
+        </div>
+
+        <!-- Карточка монитора группы -->
         <div class="card">
-            <h2>👥 Монитор группы</h2>
+            <h2>👥 Монитор группы <span id="onlineCountBadge" class="online-count">0 онлайн</span></h2>
             <div id="groupList" class="user-list">
                 <div style="text-align: center; padding: 40px; color: #adb5bd;">Загрузка участников...</div>
             </div>
         </div>
+
+        <!-- Статистика -->
+        <div class="card">
+            <h2>📊 Статистика учебы</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalToday">00:00:00</div>
+                    <div class="stat-label">Сегодня</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="totalWeek">00:00:00</div>
+                    <div class="stat-label">За неделю</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="totalAll">00:00:00</div>
+                    <div class="stat-label">Всего</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="studyStreak">0</div>
+                    <div class="stat-label">Дней подряд 🔥</div>
+                </div>
+            </div>
+        </div>
+
         <div class="footer-note">
             ⚡ Статус обновляется в реальном времени • Зелёная точка — пользователь онлайн
         </div>
@@ -199,29 +333,194 @@
 
     <script>
         // ========== НАСТРОЙКИ SUPABASE ==========
-        // ВАЖНО: Используем window.supabase, потому что библиотека загружена через script
         const SUPABASE_URL = 'https://ntkqkvgbmhhwrxcdntqg.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50a3FrdmdibWhod3J4Y2RudHFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3Njg4NzQsImV4cCI6MjA4ODM0NDg3NH0.hMjEh6iJu4FBA24Ji4q7gCQ14vAx7C1EOGv4gkksQRQ';
         const MY_USER_ID = '502d2c0d-5183-4170-832d-84afe341c5e3';
 
-        // Проверка что Supabase загрузился
+        // Проверка загрузки Supabase
         if (typeof supabase === 'undefined') {
-            document.body.innerHTML = '<div class="container"><div class="card"><div class="error-box">❌ Ошибка: Supabase не загрузился! Проверьте интернет соединение.</div></div></div>';
+            document.body.innerHTML = '<div class="container"><div class="card"><div class="error-box">❌ Ошибка: Supabase не загрузился!</div></div></div>';
             throw new Error('Supabase not loaded');
         }
 
-        // Создаем клиент Supabase
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         
         let allUsers = [];
         let onlineUsers = {};
 
-        // Функция для смены статуса
+        // ========== СЧЕТЧИК ВРЕМЕНИ УЧЕБЫ ==========
+        let studySeconds = 0;
+        let timerInterval = null;
+        let isTimerRunning = false;
+        let studyStartTime = null;
+
+        // Ключ для localStorage
+        const STORAGE_KEY = 'study_timer_data';
+
+        // Загрузка сохраненного времени
+        function loadStudyTime() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                const data = JSON.parse(saved);
+                const today = new Date().toDateString();
+                
+                if (data.lastDate === today) {
+                    studySeconds = data.seconds;
+                } else {
+                    // Новый день - сохраняем вчерашнее время в историю
+                    saveToHistory(data.seconds, data.lastDate);
+                    studySeconds = 0;
+                }
+                updateTimerDisplay();
+                updateStatistics();
+            }
+        }
+
+        // Сохранение времени в историю
+        function saveToHistory(seconds, date) {
+            const history = JSON.parse(localStorage.getItem('study_history') || '[]');
+            history.push({ date: date, seconds: seconds });
+            // Оставляем только последние 30 дней
+            while (history.length > 30) history.shift();
+            localStorage.setItem('study_history', JSON.stringify(history));
+        }
+
+        // Сохранение текущего времени
+        function saveStudyTime() {
+            const data = {
+                seconds: studySeconds,
+                lastDate: new Date().toDateString()
+            };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        }
+
+        // Обновление отображения таймера
+        function updateTimerDisplay() {
+            const hours = Math.floor(studySeconds / 3600);
+            const minutes = Math.floor((studySeconds % 3600) / 60);
+            const seconds = studySeconds % 60;
+            document.getElementById('timerDisplay').textContent = 
+                `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        // Обновление статистики
+        function updateStatistics() {
+            // Время за сегодня
+            document.getElementById('totalToday').textContent = formatTime(studySeconds);
+            
+            // Время за неделю
+            const history = JSON.parse(localStorage.getItem('study_history') || '[]');
+            const weekSeconds = history
+                .filter(h => {
+                    const date = new Date(h.date);
+                    const weekAgo = new Date();
+                    weekAgo.setDate(weekAgo.getDate() - 7);
+                    return date >= weekAgo;
+                })
+                .reduce((sum, h) => sum + h.seconds, 0) + studySeconds;
+            document.getElementById('totalWeek').textContent = formatTime(weekSeconds);
+            
+            // Всего времени
+            const totalSeconds = history.reduce((sum, h) => sum + h.seconds, 0) + studySeconds;
+            document.getElementById('totalAll').textContent = formatTime(totalSeconds);
+            
+            // Серия дней (streak)
+            let streak = 1;
+            const today = new Date().toDateString();
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            
+            if (studySeconds >= 60) { // Учился хотя бы минуту сегодня
+                let checkDate = yesterday;
+                for (let i = 0; i < 30; i++) {
+                    const dayData = history.find(h => h.date === checkDate.toDateString());
+                    if (dayData && dayData.seconds >= 60) {
+                        streak++;
+                        checkDate.setDate(checkDate.getDate() - 1);
+                    } else {
+                        break;
+                    }
+                }
+            } else {
+                streak = 0;
+            }
+            document.getElementById('studyStreak').textContent = streak;
+        }
+
+        function formatTime(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
+        }
+
+        // Старт таймера
+        function startTimer() {
+            if (isTimerRunning) return;
+            isTimerRunning = true;
+            studyStartTime = Date.now() - studySeconds * 1000;
+            
+            timerInterval = setInterval(() => {
+                if (isTimerRunning) {
+                    const now = Date.now();
+                    studySeconds = Math.floor((now - studyStartTime) / 1000);
+                    updateTimerDisplay();
+                    saveStudyTime();
+                    updateStatistics();
+                    
+                    // Обновляем статус в Supabase с текущим временем
+                    updateStudyTimeInSupabase();
+                }
+            }, 1000);
+        }
+
+        // Пауза таймера
+        function pauseTimer() {
+            if (!isTimerRunning) return;
+            isTimerRunning = false;
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            saveStudyTime();
+            updateStatistics();
+            updateStudyTimeInSupabase();
+        }
+
+        // Сброс таймера (только для текущей сессии)
+        function resetTimer() {
+            if (confirm('Сбросить время учебы за сегодня?')) {
+                studySeconds = 0;
+                updateTimerDisplay();
+                saveStudyTime();
+                updateStatistics();
+                updateStudyTimeInSupabase();
+                if (!isTimerRunning) {
+                    startTimer();
+                }
+            }
+        }
+
+        // Обновление времени учебы в Supabase
+        async function updateStudyTimeInSupabase() {
+            try {
+                await supabaseClient
+                    .from('profiles')
+                    .update({ 
+                        study_time: studySeconds,
+                        last_study_date: new Date().toDateString(),
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', MY_USER_ID);
+            } catch (error) {
+                console.error('Ошибка сохранения времени:', error);
+            }
+        }
+
+        // ========== ОСТАЛЬНЫЕ ФУНКЦИИ (статусы, пользователи) ==========
+        
         async function changeStatus(newStatus) {
             try {
-                console.log('🔄 Меняем статус на:', newStatus);
-                
-                const { data, error } = await supabaseClient
+                const { error } = await supabaseClient
                     .from('profiles')
                     .update({ 
                         status: newStatus,
@@ -231,22 +530,17 @@
                 
                 if (error) throw error;
                 
-                console.log('✅ Статус обновлён');
-                
-                // Визуальный фидбек
                 const infoBlock = document.getElementById('myInfo');
                 infoBlock.style.background = '#e8f5e9';
                 setTimeout(() => {
                     infoBlock.style.background = '#f8f9ff';
                 }, 300);
-                
             } catch (error) {
-                console.error('❌ Ошибка при смене статуса:', error);
-                alert('Ошибка: ' + error.message + '\n\nПроверьте: таблица profiles существует и RLS настроены');
+                console.error('Ошибка:', error);
+                alert('Ошибка: ' + error.message);
             }
         }
 
-        // Функция для отображения списка пользователей
         function renderUserList() {
             const container = document.getElementById('groupList');
             if (!container) return;
@@ -257,8 +551,9 @@
             }
             
             const onlineIds = new Set(Object.keys(onlineUsers));
+            const onlineCount = onlineIds.size;
+            document.getElementById('onlineCountBadge').textContent = `${onlineCount} онлайн`;
             
-            // Сортируем: сначала онлайн, потом по имени
             const sortedUsers = [...allUsers].sort((a, b) => {
                 const aOnline = onlineIds.has(a.id);
                 const bOnline = onlineIds.has(b.id);
@@ -270,23 +565,26 @@
             const html = sortedUsers.map(user => {
                 const isOnline = onlineIds.has(user.id);
                 const isMe = user.id === MY_USER_ID;
-                const userName = user.username || 'Без имени';
-                const userEmail = user.email || '';
-                const userStatus = user.status || '😴 Статус не указан';
+                const studyTime = user.study_time || 0;
+                const studyHours = Math.floor(studyTime / 3600);
+                const studyMins = Math.floor((studyTime % 3600) / 60);
                 
                 return `
                     <div class="user-item">
                         <div class="status-dot ${isOnline ? 'online' : 'offline'}"></div>
                         <div style="flex: 1;">
                             <div class="user-name">
-                                ${escapeHtml(userName)} ${isMe ? '(Вы)' : ''}
-                                ${userEmail ? `<span class="email-label">${escapeHtml(userEmail)}</span>` : ''}
+                                ${escapeHtml(user.username || 'Без имени')} ${isMe ? '(Вы)' : ''}
+                                ${user.email ? `<span class="email-label">${escapeHtml(user.email)}</span>` : ''}
                                 <span class="badge ${isOnline ? 'badge-online' : 'badge-offline'}">
                                     ${isOnline ? '● Online' : '○ Offline'}
                                 </span>
                             </div>
                             <div class="status-text">
-                                📝 ${escapeHtml(userStatus)}
+                                📝 ${escapeHtml(user.status || 'Статус не указан')}
+                            </div>
+                            <div class="status-text" style="font-size: 0.7rem; color: #667eea;">
+                                ⏱ Учился сегодня: ${studyHours}ч ${studyMins}мин
                             </div>
                         </div>
                     </div>
@@ -296,7 +594,6 @@
             container.innerHTML = html;
         }
         
-        // Защита от XSS
         function escapeHtml(str) {
             if (!str) return '';
             return str
@@ -307,75 +604,61 @@
                 .replace(/'/g, '&#39;');
         }
         
-        // Обновление информации о текущем пользователе
         function updateMyProfileInfo() {
             const myProfile = allUsers.find(u => u.id === MY_USER_ID);
             const myInfoDiv = document.getElementById('myInfo');
             
-            if (myInfoDiv) {
-                if (myProfile) {
-                    myInfoDiv.innerHTML = `
-                        <p>
-                            ✨ Вы вошли как: <b>${escapeHtml(myProfile.username)}</b><br>
-                            <span style="font-size: 0.9rem; color: #667eea;">
-                                📍 Текущий статус: ${escapeHtml(myProfile.status || 'Не задан')}
-                            </span>
-                        </p>
-                    `;
-                } else {
-                    myInfoDiv.innerHTML = `
-                        <p style="color: #dc3545;">
-                            ⚠️ Ваш профиль не найден в таблице!<br>
-                            <small>Выполните SQL запрос для создания профиля</small>
-                        </p>
-                    `;
-                }
+            if (myInfoDiv && myProfile) {
+                const studyHours = Math.floor((myProfile.study_time || 0) / 3600);
+                const studyMins = Math.floor(((myProfile.study_time || 0) % 3600) / 60);
+                myInfoDiv.innerHTML = `
+                    <p>
+                        ✨ Вы вошли как: <b>${escapeHtml(myProfile.username)}</b><br>
+                        <span style="font-size: 0.9rem; color: #667eea;">
+                            📍 Статус: ${escapeHtml(myProfile.status || 'Не задан')}<br>
+                            ⏱ Время учебы сегодня: ${studyHours}ч ${studyMins}мин
+                        </span>
+                    </p>
+                `;
             }
         }
 
-        // Основная инициализация
         async function init() {
             try {
-                console.log('🚀 Инициализация монитора статусов...');
-                console.log('Supabase client:', supabaseClient);
+                console.log('🚀 Инициализация...');
                 
-                // 1. Загружаем всех пользователей
+                // Загружаем пользователей
                 const { data: usersData, error: usersError } = await supabaseClient
                     .from('profiles')
                     .select('*');
                 
-                if (usersError) {
-                    console.error('Ошибка загрузки:', usersError);
-                    document.getElementById('groupList').innerHTML = `
-                        <div class="error-box">
-                            ❌ Ошибка загрузки: ${usersError.message}<br><br>
-                            <small>Проверьте что таблица "profiles" существует</small>
-                        </div>
-                    `;
-                    return;
-                }
+                if (usersError) throw usersError;
                 
                 allUsers = usersData || [];
                 console.log(`✅ Загружено ${allUsers.length} пользователей`);
                 
-                // 2. Настройка Realtime Presence
+                // Загружаем сохраненное время учебы
+                loadStudyTime();
+                
+                // Добавляем колонку study_time если её нет (SQL нужно выполнить один раз)
+                // ALTER TABLE profiles ADD COLUMN IF NOT EXISTS study_time INT DEFAULT 0;
+                // ALTER TABLE profiles ADD COLUMN IF NOT EXISTS last_study_date TEXT;
+                
+                // Настройка Realtime
                 const channel = supabaseClient.channel('group-monitor', {
                     config: { presence: { key: MY_USER_ID } }
                 });
                 
-                // Следим за изменениями presence (кто онлайн)
                 channel.on('presence', { event: 'sync' }, () => {
                     onlineUsers = channel.presenceState();
                     renderUserList();
                 });
                 
-                // Следим за изменениями в таблице profiles
                 channel.on('postgres_changes', { 
                     event: 'UPDATE', 
                     schema: 'public', 
                     table: 'profiles' 
                 }, (payload) => {
-                    console.log('🔄 Обновление профиля:', payload.new.username);
                     const index = allUsers.findIndex(u => u.id === payload.new.id);
                     if (index !== -1) {
                         allUsers[index] = payload.new;
@@ -384,37 +667,28 @@
                     updateMyProfileInfo();
                 });
                 
-                // Подписываемся и добавляем себя в онлайн
                 await channel.subscribe();
                 await channel.track({ 
                     user_id: MY_USER_ID, 
                     online_at: new Date().toISOString() 
                 });
                 
-                // Отображаем данные
                 renderUserList();
                 updateMyProfileInfo();
                 
                 console.log('✅ Инициализация завершена!');
-                
             } catch (error) {
-                console.error('💥 Критическая ошибка:', error);
-                document.getElementById('groupList').innerHTML = `
-                    <div class="error-box">
-                        💥 Ошибка: ${error.message}
-                    </div>
-                `;
+                console.error('Ошибка:', error);
             }
         }
         
-        // Привязываем обработчики к кнопкам
-        const btnOnline = document.getElementById('btnOnline');
-        const btnOffline = document.getElementById('btnOffline');
+        // Привязываем обработчики
+        document.getElementById('btnOnline').onclick = () => changeStatus('🟢 В сети | Активен');
+        document.getElementById('btnOffline').onclick = () => changeStatus('⚪ Не в сети | Отошёл');
+        document.getElementById('timerStart').onclick = startTimer;
+        document.getElementById('timerPause').onclick = pauseTimer;
+        document.getElementById('timerReset').onclick = resetTimer;
         
-        if (btnOnline) btnOnline.onclick = () => changeStatus('🟢 В сети | Активен');
-        if (btnOffline) btnOffline.onclick = () => changeStatus('⚪ Не в сети | Отошёл');
-        
-        // Запускаем приложение
         init();
     </script>
 </body>
