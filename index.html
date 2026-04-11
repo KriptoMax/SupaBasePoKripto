@@ -70,9 +70,9 @@
 
     <script>
         const S_URL = 'https://ntkqkvgbmhhwrxcdntqg.supabase.co';
-        const S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50a3FrdmdibWhod3J4Y2RudHFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3Njg4NzQsImV4cCI6MjA4ODM0NDg3NH0.hMjEh6iJu4FBA24Ji4q7gCQ14vAx7C1EOGv4gkksQRQ';
+        const S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'; // твой ключ
+        const supabase = supabase.createClient(S_URL, S_KEY); // Вот это объявлени
         const MY_ID = '502d2c0d-5183-4170-832d-84afe341c5e3';
-        const supabase = supabase.createClient(S_URL, S_KEY);
 
         let myUsername = "Максим";
 
