@@ -42,24 +42,32 @@
         .rank-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; align-items: center; }
         .rank-time { font-family: monospace; font-size: 0.85rem; background: #eee; padding: 2px 6px; border-radius: 5px; }
         
-        .badge-list { display: flex; gap: 8px; margin-top: 10px; }
+        .badge-list { display: flex; gap: 8px; margin-top: 15px; }
         .badge { font-size: 1.5rem; filter: grayscale(100%); transition: 0.3s; cursor: help; }
         .badge.active { filter: grayscale(0%); transform: scale(1.1); }
 
         .input-group { display: flex; gap: 10px; }
         input { flex: 1; padding: 12px; border: 2px solid #edf2f7; border-radius: 10px; outline: none; transition: 0.2s; }
         input:focus { border-color: #667eea; }
-        button { padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; }
+        button { padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.2s; }
         button:hover { opacity: 0.9; }
+
+        /* Кнопки действий */
+        .btn-reset { background: #ff4757; font-size: 0.8rem; margin-top: 10px; width: 100%; }
+        #uName { cursor: pointer; color: #667eea; text-decoration: underline; text-decoration-style: dotted; }
+        #uName:hover { color: #1a1a2e; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="main-content">
             <div class="card">
-                <h2 id="uName">Загрузка...</h2>
+                <h2 id="uName" title="Нажми, чтобы увидеть статистику">Загрузка...</h2>
                 <div class="timer-display" id="mainTimer">00:00:00</div>
                 <p class="timer-status">● Идет учет времени</p>
+                
+                <button id="resetBtn" class="btn-reset">Сбросить прогресс обучения</button>
+
                 <div class="badge-list" id="myBadges">
                     <span class="badge" id="b_early_bird" title="Ранняя пташка">🌅</span>
                     <span class="badge" id="b_marathon" title="Марафонец">🏃</span>
@@ -96,7 +104,6 @@
         let myUsername = "Максим";
         let totalStudySeconds = 0;
 
-        // Вспомогательная функция для форматирования времени (00:00:00)
         function formatTime(totalSeconds) {
             const h = Math.floor(totalSeconds / 3600);
             const m = Math.floor((totalSeconds % 3600) / 60);
@@ -104,13 +111,12 @@
             return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
         }
 
-        // 1. ЛОГИКА ТАЙМЕРА (Секундомер)
+        // 1. ЛОГИКА ТАЙМЕРА
         function startLiveTimer() {
             setInterval(async () => {
                 totalStudySeconds++;
                 document.getElementById('mainTimer').innerText = formatTime(totalStudySeconds);
 
-                // Сохраняем в базу каждые 10 секунд
                 if (totalStudySeconds % 10 === 0) {
                     await supabaseClient
                         .from('profiles')
@@ -120,44 +126,39 @@
             }, 1000);
         }
 
-        // 2. ФУНКЦИЯ ОТРИСОВКИ СООБЩЕНИЯ
-        function addMessageToUI(msg) {
-            const container = document.getElementById('chatMessages');
-            if (container.innerText.includes("Инициализация") || container.innerText.includes("Сообщений пока нет")) {
-                container.innerHTML = '';
+        // 2. ФУНКЦИЯ ПОЛУЧЕНИЯ СТАТИСТИКИ (Для задания)
+        async function getUserProfile(userId) {
+            const { data, error } = await supabaseClient
+                .from('profiles')
+                .select('username, study_time, status')
+                .eq('id', userId)
+                .single();
+        
+            if (error) {
+                console.error("Ошибка статистики:", error.message);
+                return null;
             }
-            const div = document.createElement('div');
-            const isMe = msg.user_id === MY_ID;
-            div.className = `msg ${isMe ? 'my-msg' : ''}`;
-            div.innerHTML = `
-                <span class="msg-author">${msg.username || 'Аноним'}</span>
-                <span class="msg-text">${msg.text}</span>
-            `;
-            container.appendChild(div);
-            container.scrollTop = container.scrollHeight;
+            return data;
         }
 
-        // 3. ЗАГРУЗКА ИСТОРИИ
-        async function loadHistory() {
-            const { data } = await supabaseClient.from('messages').select('*').order('created_at', { ascending: true }).limit(50);
-            const container = document.getElementById('chatMessages');
-            container.innerHTML = '';
-            if (data && data.length > 0) data.forEach(m => addMessageToUI(m));
-            else container.innerHTML = '<div style="color:gray;text-align:center;padding:20px;">Сообщений пока нет.</div>';
+        // 3. ФУНКЦИЯ СБРОСА ВРЕМЕНИ (RPC) (Для задания)
+        async function resetMyTime() {
+            if (!confirm("Вы действительно хотите обнулить время?")) return;
+            
+            const { error } = await supabaseClient.rpc('reset_study_time', { user_uuid: MY_ID });
+            
+            if (!error) {
+                totalStudySeconds = 0;
+                document.getElementById('mainTimer').innerText = "00:00:00";
+                alert("Время успешно сброшено!");
+                loadMeta(); // Обновляем рейтинг
+            } else {
+                alert("Ошибка: " + error.message);
+            }
         }
 
-        // 4. ОТПРАВКА
-        async function send() {
-            const input = document.getElementById('chatInput');
-            const val = input.value.trim();
-            if (!val) return;
-            await supabaseClient.from('messages').insert([{ user_id: MY_ID, username: myUsername, text: val }]);
-            input.value = '';
-        }
-
-        // 5. ЗАГРУЗКА ДАННЫХ И РЕЙТИНГА
+        // 4. ЗАГРУЗКА ДАННЫХ
         async function loadMeta() {
-            // Загрузка личного профиля
             const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', MY_ID).single();
             if (profile) {
                 myUsername = profile.username;
@@ -166,15 +167,22 @@
                 document.getElementById('mainTimer').innerText = formatTime(totalStudySeconds);
             }
 
-            // Загрузка рейтинга (Топ-5)
+            // Загрузка достижений
+            const { data: achs } = await supabaseClient.from('achievements').select('type').eq('user_id', MY_ID);
+            if (achs) {
+                achs.forEach(a => {
+                    const el = document.getElementById(`b_${a.type}`);
+                    if (el) el.classList.add('active');
+                });
+            }
+
+            // Загрузка рейтинга
             const { data: top } = await supabaseClient.from('profiles')
                 .select('username, study_time')
-                .order('study_time', { ascending: false })
-                .limit(5);
+                .order('study_time', { ascending: false }).limit(5);
 
             if (top) {
-                const lb = document.getElementById('leaderboard');
-                lb.innerHTML = top.map(u => `
+                document.getElementById('leaderboard').innerHTML = top.map(u => `
                     <div class="rank-item">
                         <span>${u.username || 'Студент'}</span>
                         <span class="rank-time">${formatTime(u.study_time || 0)}</span>
@@ -183,22 +191,52 @@
             }
         }
 
-        // 6. ЗАПУСК
+        // ЧАТ (Вспомогательные)
+        function addMessageToUI(msg) {
+            const container = document.getElementById('chatMessages');
+            if (container.innerText.includes("Инициализация")) container.innerHTML = '';
+            const div = document.createElement('div');
+            div.className = `msg ${msg.user_id === MY_ID ? 'my-msg' : ''}`;
+            div.innerHTML = `<span class="msg-author">${msg.username || 'Аноним'}</span><span class="msg-text">${msg.text}</span>`;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async function send() {
+            const input = document.getElementById('chatInput');
+            const val = input.value.trim();
+            if (!val) return;
+            await supabaseClient.from('messages').insert([{ user_id: MY_ID, username: myUsername, text: val }]);
+            input.value = '';
+        }
+
+        // 5. ЗАПУСК
         async function init() {
             await loadMeta();
-            await loadHistory();
-            startLiveTimer(); // Запускаем тиканье секунд
+            
+            // Загрузка истории чата
+            const { data } = await supabaseClient.from('messages').select('*').order('created_at', { ascending: true }).limit(50);
+            if (data) data.forEach(m => addMessageToUI(m));
 
-            // Обновляем рейтинг раз в 30 секунд
-            setInterval(loadMeta, 30000);
+            startLiveTimer();
 
-            // Realtime
-            supabaseClient.channel('any').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
-                addMessageToUI(payload.new);
-            }).subscribe();
-
+            // Привязка событий кнопкам
             document.getElementById('sendBtn').onclick = send;
             document.getElementById('chatInput').onkeypress = (e) => { if (e.key === 'Enter') send(); };
+            
+            // Привязка функции сброса к кнопке
+            document.getElementById('resetBtn').onclick = resetMyTime;
+
+            // Привязка получения статистики к клику на имя
+            document.getElementById('uName').onclick = async () => {
+                const stats = await getUserProfile(MY_ID);
+                if (stats) {
+                    alert(`Статистика ${stats.username}:\nВремя: ${formatTime(stats.study_time)}\nСтатус: ${stats.status}`);
+                }
+            };
+
+            // Realtime чат
+            supabaseClient.channel('any').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, p => addMessageToUI(p.new)).subscribe();
         }
 
         init();
