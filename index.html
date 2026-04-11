@@ -3,58 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Study Monitor Pro | Исправленный чат</title>
+    <title>Study Monitor Pro | Final Version</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         /* Базовые стили */
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: #667eea; padding: 20px; display: flex; justify-content: center; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #667eea; padding: 20px; display: flex; justify-content: center; }
         .container { max-width: 900px; width: 100%; display: grid; grid-template-columns: 1fr 300px; gap: 20px; }
+        
+        @media (max-width: 768px) {
+            .container { grid-template-columns: 1fr; }
+        }
+
         .card { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); margin-bottom: 20px; }
         
         /* Чат */
         #chatMessages { 
             height: 350px; 
             overflow-y: auto; 
-            background: #f1f3f5; 
+            background: #f8f9fa; 
             border-radius: 12px; 
             padding: 15px; 
             margin-bottom: 15px;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 10px;
+            border: 1px solid #eee;
         }
-        .msg { padding: 8px 12px; border-radius: 10px; background: white; max-width: 90%; align-self: flex-start; border: 1px solid #eee; }
+        .msg { padding: 10px 14px; border-radius: 12px; background: white; max-width: 85%; align-self: flex-start; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .msg.my-msg { background: #667eea; color: white; align-self: flex-end; }
-        .msg-author { font-size: 0.7rem; font-weight: bold; display: block; margin-bottom: 2px; opacity: 0.8; }
+        .msg-author { font-size: 0.7rem; font-weight: bold; display: block; margin-bottom: 3px; opacity: 0.8; }
 
         /* Рейтинг */
-        .rank-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
-        .badge-list { display: flex; gap: 5px; margin-top: 10px; }
-        .badge { font-size: 1.2rem; filter: grayscale(100%); transition: 0.3s; }
-        .badge.active { filter: grayscale(0%); }
+        .rank-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .badge-list { display: flex; gap: 8px; margin-top: 10px; }
+        .badge { font-size: 1.5rem; filter: grayscale(100%); transition: 0.3s; cursor: help; }
+        .badge.active { filter: grayscale(0%); transform: scale(1.1); }
 
-        input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; outline: none; }
-        button { padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; }
+        .input-group { display: flex; gap: 10px; }
+        input { flex: 1; padding: 12px; border: 2px solid #edf2f7; border-radius: 10px; outline: none; transition: 0.2s; }
+        input:focus { border-color: #667eea; }
+        button { padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; }
+        button:hover { opacity: 0.9; }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="main">
+        <div class="main-content">
             <div class="card">
                 <h2 id="uName">Загрузка...</h2>
                 <div class="badge-list" id="myBadges">
-                    <span class="badge" id="b_early" title="Ранняя пташка (до 8:00)">🌅</span>
-                    <span class="badge" id="b_marathon" title="Марафонец (2ч учебы)">🏃</span>
-                    <span class="badge" id="b_activist" title="Активист (20 сообщений)">📣</span>
+                    <span class="badge" id="b_early_bird" title="Ранняя пташка (заход до 8:00)">🌅</span>
+                    <span class="badge" id="b_marathon" title="Марафонец (учеба более 2 часов)">🏃</span>
+                    <span class="badge" id="b_activist" title="Активист (более 20 сообщений)">📣</span>
                 </div>
             </div>
 
             <div class="card">
                 <h3>💬 Общий чат</h3>
-                <div id="chatMessages">Загрузка сообщений...</div>
-                <div style="display: flex; gap: 10px;">
-                    <input type="text" id="chatInput" placeholder="Введите сообщение...">
+                <div id="chatMessages">Инициализация чата...</div>
+                <div class="input-group">
+                    <input type="text" id="chatInput" placeholder="Напишите сообщение...">
                     <button id="sendBtn">Отправить</button>
                 </div>
             </div>
@@ -63,35 +72,47 @@
         <div class="sidebar">
             <div class="card">
                 <h3>🏆 Топ студентов</h3>
-                <div id="leaderboard"></div>
+                <div id="leaderboard" style="margin-top: 10px;">
+                    <p style="color: gray; font-size: 0.9rem;">Загрузка рейтинга...</p>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
+        // 1. НАСТРОЙКИ ПОДКЛЮЧЕНИЯ
         const S_URL = 'https://ntkqkvgbmhhwrxcdntqg.supabase.co';
-        const S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'; // твой ключ
-        const supabase = supabase.createClient(S_URL, S_KEY); // Вот это объявлени
+        const S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50a3FrdmdibWhod3J4Y2RudHFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3Njg4NzQsImV4cCI6MjA4ODM0NDg3NH0.hMjEh6iJu4FBA24Ji4q7gCQ14vAx7C1EOGv4gkksQRQ';
+        
+        // Создаем клиент (используем supabaseClient во избежание конфликтов)
+        const supabaseClient = supabase.createClient(S_URL, S_KEY);
+        
         const MY_ID = '502d2c0d-5183-4170-832d-84afe341c5e3';
-
         let myUsername = "Максим";
 
-        // 1. Отрисовка сообщения
-        function addMessageToUI(msg, isHistory = false) {
+        // 2. ФУНКЦИЯ ОТРИСОВКИ СООБЩЕНИЯ
+        function addMessageToUI(msg) {
             const container = document.getElementById('chatMessages');
-            if (isHistory && container.innerText === "Загрузка сообщений...") container.innerHTML = '';
+            
+            // Убираем текст загрузки при первом сообщении
+            if (container.innerText === "Инициализация чата..." || container.innerText === "Сообщений пока нет. Будь первым!") {
+                container.innerHTML = '';
+            }
             
             const div = document.createElement('div');
             const isMe = msg.user_id === MY_ID;
             div.className = `msg ${isMe ? 'my-msg' : ''}`;
-            div.innerHTML = `<span class="msg-author">${msg.username || 'Аноним'}</span>${msg.text}`;
+            div.innerHTML = `
+                <span class="msg-author">${msg.username || 'Аноним'}</span>
+                <span class="msg-text">${msg.text}</span>
+            `;
             container.appendChild(div);
             container.scrollTop = container.scrollHeight;
         }
 
-        // 2. Загрузка истории
+        // 3. ЗАГРУЗКА ИСТОРИИ ЧАТА
         async function loadHistory() {
-            const { data, error } = await supabase
+            const { data, error } = await supabaseClient
                 .from('messages')
                 .select('*')
                 .order('created_at', { ascending: true })
@@ -99,55 +120,99 @@
             
             const container = document.getElementById('chatMessages');
             container.innerHTML = ''; 
-            if (data) data.forEach(m => addMessageToUI(m, true));
+            
+            if (error) {
+                container.innerHTML = '<div style="color:red">Ошибка загрузки чата</div>';
+                console.error(error);
+                return;
+            }
+
+            if (data && data.length > 0) {
+                data.forEach(m => addMessageToUI(m));
+            } else {
+                container.innerHTML = '<div style="color:gray;text-align:center;padding:20px;">Сообщений пока нет. Будь первым!</div>';
+            }
         }
 
-        // 3. Отправка
+        // 4. ОТПРАВКА СООБЩЕНИЯ
         async function send() {
             const input = document.getElementById('chatInput');
             const val = input.value.trim();
             if (!val) return;
 
-            const { error } = await supabase.from('messages').insert([
+            const { error } = await supabaseClient.from('messages').insert([
                 { user_id: MY_ID, username: myUsername, text: val }
             ]);
-            if (error) console.error(error);
-            input.value = '';
+
+            if (error) {
+                alert("Ошибка при отправке!");
+                console.error(error);
+            } else {
+                input.value = '';
+            }
         }
 
-        // 4. Достижения и Рейтинг
+        // 5. ЗАГРУЗКА ПРОФИЛЯ, ДОСТИЖЕНИЙ И РЕЙТИНГА
         async function loadMeta() {
-            const { data: profile } = await supabase.from('profiles').select('*').eq('id', MY_ID).single();
+            // Имя
+            const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', MY_ID).single();
             if (profile) {
                 myUsername = profile.username;
                 document.getElementById('uName').innerText = myUsername;
             }
 
-            const { data: achs } = await supabase.from('achievements').select('type').eq('user_id', MY_ID);
-            achs?.forEach(a => document.getElementById(`b_${a.type}`)?.classList.add('active'));
+            // Значки (достижения)
+            const { data: achs } = await supabaseClient.from('achievements').select('type').eq('user_id', MY_ID);
+            if (achs) {
+                achs.forEach(a => {
+                    const el = document.getElementById(`b_${a.type}`);
+                    if (el) el.classList.add('active');
+                });
+            }
 
-            const { data: top } = await supabase.from('profiles').select('username, study_time').order('study_time', { ascending: false }).limit(5);
-            document.getElementById('leaderboard').innerHTML = top.map(u => 
-                `<div class="rank-item"><span>${u.username}</span><b>${Math.floor(u.study_time/3600)}ч</b></div>`
-            ).join('');
+            // Топ студентов
+            const { data: top } = await supabaseClient.from('profiles')
+                .select('username, study_time')
+                .order('study_time', { ascending: false })
+                .limit(5);
+
+            if (top) {
+                const lb = document.getElementById('leaderboard');
+                lb.innerHTML = top.map(u => `
+                    <div class="rank-item">
+                        <span>${u.username || 'Студент'}</span>
+                        <b>${Math.floor((u.study_time || 0) / 3600)}ч</b>
+                    </div>
+                `).join('');
+            }
         }
 
-        // 5. Инициализация
+        // 6. ИНИЦИАЛИЗАЦИЯ ВСЕГО ПРИЛОЖЕНИЯ
         async function init() {
+            console.log("Приложение запускается...");
+            
+            // Загружаем данные
             await loadMeta();
             await loadHistory();
 
-            // Realtime подписка
-            supabase.channel('messages_realtime')
+            // Подключаем Realtime для чата
+            supabaseClient.channel('any')
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+                    console.log("Получено новое сообщение через Realtime:", payload.new);
                     addMessageToUI(payload.new);
                 })
                 .subscribe();
 
+            // Обработчики кнопок
             document.getElementById('sendBtn').onclick = send;
-            document.getElementById('chatInput').onkeypress = (e) => { if(e.key === 'Enter') send(); };
+            document.getElementById('chatInput').onkeypress = (e) => { 
+                if (e.key === 'Enter') send(); 
+            };
+            
+            console.log("Приложение готово!");
         }
 
+        // Поехали!
         init();
     </script>
 </body>
