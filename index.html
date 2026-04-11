@@ -3,71 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Study Monitor Pro | Рейтинг и Достижения</title>
+    <title>Study Monitor Pro | Исправленный чат</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* ... (предыдущие стили сохраняются) ... */
+        /* Базовые стили */
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: sans-serif; background: #667eea; padding: 20px; display: flex; justify-content: center; color: #333; }
+        body { font-family: 'Segoe UI', sans-serif; background: #667eea; padding: 20px; display: flex; justify-content: center; }
         .container { max-width: 900px; width: 100%; display: grid; grid-template-columns: 1fr 300px; gap: 20px; }
-        @media (max-width: 768px) { .container { grid-template-columns: 1fr; } }
         .card { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); margin-bottom: 20px; }
         
-        /* Стили достижений */
-        .achievements-list { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
-        .badge-icon { 
-            width: 40px; height: 40px; border-radius: 50%; 
-            display: flex; align-items: center; justify-content: center; 
-            font-size: 20px; cursor: help; border: 2px solid #eee;
+        /* Чат */
+        #chatMessages { 
+            height: 350px; 
+            overflow-y: auto; 
+            background: #f1f3f5; 
+            border-radius: 12px; 
+            padding: 15px; 
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
-        .badge-early { background: #fff9db; border-color: #fab005; } /* Ранняя пташка */
-        .badge-marathon { background: #e3fafc; border-color: #1098ad; } /* Марафонец */
-        .badge-activist { background: #ebfbee; border-color: #40c057; } /* Активист */
+        .msg { padding: 8px 12px; border-radius: 10px; background: white; max-width: 90%; align-self: flex-start; border: 1px solid #eee; }
+        .msg.my-msg { background: #667eea; color: white; align-self: flex-end; }
+        .msg-author { font-size: 0.7rem; font-weight: bold; display: block; margin-bottom: 2px; opacity: 0.8; }
 
-        /* Стили рейтинга */
-        .rank-item { display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #eee; }
-        .rank-pos { width: 30px; font-weight: bold; color: #667eea; }
-        .rank-name { flex: 1; font-weight: 500; }
-        .rank-value { font-family: monospace; font-weight: bold; }
+        /* Рейтинг */
+        .rank-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+        .badge-list { display: flex; gap: 5px; margin-top: 10px; }
+        .badge { font-size: 1.2rem; filter: grayscale(100%); transition: 0.3s; }
+        .badge.active { filter: grayscale(0%); }
 
-        /* Чат и прочее (сокращенно для примера) */
-        #chatMessages { height: 300px; overflow-y: auto; background: #f8f9ff; border-radius: 10px; padding: 10px; margin-bottom: 10px; }
-        .msg { margin-bottom: 8px; font-size: 0.9rem; }
-        .timer-display { font-size: 2.5rem; text-align: center; font-family: monospace; margin: 10px 0; }
-        input { width: 70%; padding: 8px; border-radius: 5px; border: 1px solid #ddd; }
-        button { padding: 8px 15px; border-radius: 5px; border: none; background: #667eea; color: white; cursor: pointer; }
+        input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; outline: none; }
+        button { padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="main-content">
+        <div class="main">
             <div class="card">
-                <h2 id="userName">Загрузка...</h2>
-                <div id="myStatus">📍 Статус: обновляется...</div>
-                <div class="achievements-list" id="myBadges">
-                    </div>
-                <hr style="margin: 15px 0; opacity: 0.2;">
-                <div style="display: flex; gap: 10px;">
-                    <button onclick="changeStatus('🟢 В сети')">В сети</button>
-                    <button onclick="changeStatus('⚪ Отошел')" style="background: #adb5bd;">Отошел</button>
-                </div>
-            </div>
-
-            <div class="card" style="background: #1a1a2e; color: white;">
-                <h3>📚 Время фокусировки</h3>
-                <div class="timer-display" id="timerDisplay">00:00:00</div>
-                <div style="text-align: center;">
-                    <button onclick="toggleTimer()" id="timerBtn" style="background: #28a745;">Старт</button>
-                    <button onclick="resetTimer()" style="background: #dc3545;">Сброс</button>
+                <h2 id="uName">Загрузка...</h2>
+                <div class="badge-list" id="myBadges">
+                    <span class="badge" id="b_early" title="Ранняя пташка (до 8:00)">🌅</span>
+                    <span class="badge" id="b_marathon" title="Марафонец (2ч учебы)">🏃</span>
+                    <span class="badge" id="b_activist" title="Активист (20 сообщений)">📣</span>
                 </div>
             </div>
 
             <div class="card">
                 <h3>💬 Общий чат</h3>
-                <div id="chatMessages"></div>
-                <div style="display: flex; gap: 5px;">
-                    <input type="text" id="chatInput" placeholder="Напиши что-нибудь...">
-                    <button onclick="sendMessage()">🚀</button>
+                <div id="chatMessages">Загрузка сообщений...</div>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="chatInput" placeholder="Введите сообщение...">
+                    <button id="sendBtn">Отправить</button>
                 </div>
             </div>
         </div>
@@ -75,148 +63,89 @@
         <div class="sidebar">
             <div class="card">
                 <h3>🏆 Топ студентов</h3>
-                <div style="font-size: 0.7rem; color: #888; margin-bottom: 10px;">По времени учебы</div>
-                <div id="leaderboard">
-                    </div>
-            </div>
-
-            <div class="card">
-                <h3>🔥 Твои успехи</h3>
-                <div id="statsInfo" style="font-size: 0.9rem; line-height: 1.6;">
-                    Сообщений: <b id="msgCount">0</b><br>
-                    Рекорд за раз: <b id="maxSession">0м</b>
-                </div>
+                <div id="leaderboard"></div>
             </div>
         </div>
     </div>
 
     <script>
-        const SUPABASE_URL = 'https://ntkqkvgbmhhwrxcdntqg.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50a3FrdmdibWhod3J4Y2RudHFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3Njg4NzQsImV4cCI6MjA4ODM0NDg3NH0.hMjEh6iJu4FBA24Ji4q7gCQ14vAx7C1EOGv4gkksQRQ';
-        const MY_USER_ID = '502d2c0d-5183-4170-832d-84afe341c5e3';
+        const S_URL = 'https://ntkqkvgbmhhwrxcdntqg.supabase.co';
+        const S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50a3FrdmdibWhod3J4Y2RudHFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3Njg4NzQsImV4cCI6MjA4ODM0NDg3NH0.hMjEh6iJu4FBA24Ji4q7gCQ14vAx7C1EOGv4gkksQRQ';
+        const MY_ID = '502d2c0d-5183-4170-832d-84afe341c5e3';
+        const supabase = supabase.createClient(S_URL, S_KEY);
 
-        const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        let studySeconds = 0;
-        let timerInt = null;
-        let sessionSeconds = 0; // Для марафонца
+        let myUsername = "Максим";
 
-        // --- ЛОГИКА ДОСТИЖЕНИЙ ---
-        const BADGE_DATA = {
-            early_bird: { icon: '🌅', title: 'Ранняя пташка', desc: 'Зашел в систему до 8:00 утра' },
-            marathon: { icon: '🏃', title: 'Марафонец', desc: 'Проучился более 2 часов за одну сессию' },
-            activist: { icon: '📣', title: 'Активист', desc: 'Написал более 20 сообщений в чате' }
-        };
-
-        async function giveAchievement(type) {
-            await client.from('achievements').insert([{ user_id: MY_USER_ID, type: type }]).select();
-            loadMyData(); // Обновить иконки
-        }
-
-        async function checkEarlyBird() {
-            const hour = new Date().getHours();
-            if (hour < 8) giveAchievement('early_bird');
-        }
-
-        // --- ОСНОВНЫЕ ФУНКЦИИ ---
-        async function loadMyData() {
-            const { data: profile } = await client.from('profiles').select('*').eq('id', MY_USER_ID).single();
-            const { data: achs } = await client.from('achievements').select('type').eq('user_id', MY_USER_ID);
+        // 1. Отрисовка сообщения
+        function addMessageToUI(msg, isHistory = false) {
+            const container = document.getElementById('chatMessages');
+            if (isHistory && container.innerText === "Загрузка сообщений...") container.innerHTML = '';
             
-            if (profile) {
-                document.getElementById('userName').textContent = profile.username;
-                document.getElementById('myStatus').textContent = `📍 ${profile.status}`;
-                studySeconds = profile.study_time || 0;
-                updateTimerUI();
-            }
-
-            const badgesDiv = document.getElementById('myBadges');
-            badgesDiv.innerHTML = '';
-            achs?.forEach(a => {
-                const b = BADGE_DATA[a.type];
-                badgesDiv.innerHTML += `<div class="badge-icon badge-${a.type}" title="${b.title}: ${b.desc}">${b.icon}</div>`;
-            });
+            const div = document.createElement('div');
+            const isMe = msg.user_id === MY_ID;
+            div.className = `msg ${isMe ? 'my-msg' : ''}`;
+            div.innerHTML = `<span class="msg-author">${msg.username || 'Аноним'}</span>${msg.text}`;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
         }
 
-        async function loadLeaderboard() {
-            const { data } = await client.from('profiles').select('username, study_time').order('study_time', { ascending: false }).limit(5);
-            const container = document.getElementById('leaderboard');
-            container.innerHTML = data.map((u, i) => `
-                <div class="rank-item">
-                    <div class="rank-pos">${i+1}</div>
-                    <div class="rank-name">${u.username}</div>
-                    <div class="rank-value">${Math.floor(u.study_time/3600)}ч</div>
-                </div>
-            `).join('');
+        // 2. Загрузка истории
+        async function loadHistory() {
+            const { data, error } = await supabase
+                .from('messages')
+                .select('*')
+                .order('created_at', { ascending: true })
+                .limit(50);
+            
+            const container = document.getElementById('chatMessages');
+            container.innerHTML = ''; 
+            if (data) data.forEach(m => addMessageToUI(m, true));
         }
 
-        async function sendMessage() {
+        // 3. Отправка
+        async function send() {
             const input = document.getElementById('chatInput');
-            if (!input.value.trim()) return;
+            const val = input.value.trim();
+            if (!val) return;
 
-            const { data: profile } = await client.from('profiles').select('username').eq('id', MY_USER_ID).single();
-            await client.from('messages').insert([{ user_id: MY_USER_ID, username: profile.username, text: input.value }]);
-            
-            // Проверка на активиста
-            const { count } = await client.from('messages').select('*', { count: 'exact', head: true }).eq('user_id', MY_USER_ID);
-            document.getElementById('msgCount').textContent = count;
-            if (count >= 20) giveAchievement('activist');
-            
+            const { error } = await supabase.from('messages').insert([
+                { user_id: MY_ID, username: myUsername, text: val }
+            ]);
+            if (error) console.error(error);
             input.value = '';
         }
 
-        function toggleTimer() {
-            if (timerInt) {
-                clearInterval(timerInt);
-                timerInt = null;
-                document.getElementById('timerBtn').textContent = 'Старт';
-                document.getElementById('timerBtn').style.background = '#28a745';
-                sessionSeconds = 0;
-            } else {
-                timerInt = setInterval(() => {
-                    studySeconds++;
-                    sessionSeconds++;
-                    updateTimerUI();
-                    if (studySeconds % 10 === 0) saveStudyTime();
-                    
-                    // Проверка на марафонца (7200 сек = 2 часа)
-                    if (sessionSeconds >= 7200) giveAchievement('marathon');
-                }, 1000);
-                document.getElementById('timerBtn').textContent = 'Пауза';
-                document.getElementById('timerBtn').style.background = '#ffc107';
+        // 4. Достижения и Рейтинг
+        async function loadMeta() {
+            const { data: profile } = await supabase.from('profiles').select('*').eq('id', MY_ID).single();
+            if (profile) {
+                myUsername = profile.username;
+                document.getElementById('uName').innerText = myUsername;
             }
+
+            const { data: achs } = await supabase.from('achievements').select('type').eq('user_id', MY_ID);
+            achs?.forEach(a => document.getElementById(`b_${a.type}`)?.classList.add('active'));
+
+            const { data: top } = await supabase.from('profiles').select('username, study_time').order('study_time', { ascending: false }).limit(5);
+            document.getElementById('leaderboard').innerHTML = top.map(u => 
+                `<div class="rank-item"><span>${u.username}</span><b>${Math.floor(u.study_time/3600)}ч</b></div>`
+            ).join('');
         }
 
-        async function saveStudyTime() {
-            await client.from('profiles').update({ study_time: studySeconds }).eq('id', MY_USER_ID);
-            loadLeaderboard();
-        }
-
-        function updateTimerUI() {
-            const h = Math.floor(studySeconds / 3600);
-            const m = Math.floor((studySeconds % 3600) / 60);
-            const s = studySeconds % 60;
-            document.getElementById('timerDisplay').textContent = 
-                `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-        }
-
-        // --- ИНИЦИАЛИЗАЦИЯ ---
+        // 5. Инициализация
         async function init() {
-            await loadMyData();
-            await loadLeaderboard();
-            checkEarlyBird();
-            
-            // Подписка на сообщения
-            client.channel('chat').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
-                const div = document.getElementById('chatMessages');
-                div.innerHTML += `<div class="msg"><b>${payload.new.username}:</b> ${payload.new.text}</div>`;
-                div.scrollTop = div.scrollHeight;
-            }).subscribe();
+            await loadMeta();
+            await loadHistory();
 
-            // Загрузить историю чата
-            const { data: msgs } = await client.from('messages').select('*').order('created_at', { ascending: true }).limit(20);
-            const div = document.getElementById('chatMessages');
-            div.innerHTML = msgs.map(m => `<div class="msg"><b>${m.username}:</b> ${m.text}</div>`).join('');
-            div.scrollTop = div.scrollHeight;
+            // Realtime подписка
+            supabase.channel('messages_realtime')
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+                    addMessageToUI(payload.new);
+                })
+                .subscribe();
+
+            document.getElementById('sendBtn').onclick = send;
+            document.getElementById('chatInput').onkeypress = (e) => { if(e.key === 'Enter') send(); };
         }
 
         init();
