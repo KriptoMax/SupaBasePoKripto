@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Study Monitor Pro | Dashboard</title>
+    <title>Study Monitor Pro | Multi-Account Mode</title>
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -12,113 +12,65 @@
             --accent: #7c6af7; --accent2: #a78bfa;
             --text: #e8e6f0; --muted: #8885a0;
             --border: rgba(255,255,255,0.08);
-            --green: #34d399; --red: #f87171; --gold: #fbbf24;
+            --green: #34d399; --red: #f87171;
         }
 
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        body { 
-            font-family: 'DM Sans', sans-serif; 
-            background: var(--bg); 
-            color: var(--text); 
-            min-height: 100vh; 
-            overflow-x: hidden;
-        }
+        body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
-        /* ── ЭКРАН ВХОДА ── */
-        #loginScreen { 
-            display: flex; align-items: center; justify-content: center; 
-            min-height: 100vh; padding: 20px; 
-            background: radial-gradient(circle at top right, rgba(124,106,247,0.05), transparent);
-        }
+        /* ЭКРАН ВХОДА */
+        #loginScreen { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
         .login-box {
             background: var(--bg2); border: 1px solid var(--border);
-            border-radius: 28px; padding: 40px;
-            width: 100%; max-width: 420px; text-align: center;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            border-radius: 28px; padding: 40px; width: 100%; max-width: 420px; text-align: center;
         }
-        .login-logo { font-size: 64px; margin-bottom: 20px; display: block; }
-        .login-title { font-size: 28px; font-weight: 700; margin-bottom: 12px; }
-        .login-sub { font-size: 15px; color: var(--muted); line-height: 1.6; margin-bottom: 32px; }
-        
         .btn-google {
-            display: flex; align-items: center; justify-content: center;
-            gap: 12px; width: 100%; padding: 16px;
-            background: #ffffff; color: #1f1f1f; border: none;
-            border-radius: 14px; font-family: 'DM Sans', sans-serif;
-            font-size: 16px; font-weight: 700; cursor: pointer; 
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; padding: 16px;
+            background: #fff; color: #1f1f1f; border: none; border-radius: 14px; font-weight: 700; cursor: pointer; transition: 0.2s;
         }
-        .btn-google:hover { background: #f3f3f3; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(255,255,255,0.1); }
-        .btn-google:active { transform: translateY(0); }
-        .btn-google:disabled { opacity: 0.6; cursor: not-allowed; }
-        .google-icon { width: 22px; height: 22px; }
+        .btn-google:hover { background: #f3f3f3; transform: translateY(-2px); }
 
-        /* ── ОСНОВНОЙ КОНТЕНТ ── */
-        #appScreen { display: none; padding: 24px 16px; animation: fadeIn 0.5s ease; }
+        /* ОСНОВНОЙ ЭКРАН */
+        #appScreen { display: none; padding: 24px 16px; animation: fadeIn 0.4s ease; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        .layout { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1fr 320px; gap: 20px; }
+        .layout { max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: 1fr 300px; gap: 20px; }
         @media (max-width: 850px) { .layout { grid-template-columns: 1fr; } }
 
         .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 20px; padding: 24px; margin-bottom: 20px; }
-        .card-title { font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+        .card-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 15px; }
 
-        /* Таймер и Профиль */
-        .user-row { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
-        .avatar { width: 52px; height: 52px; border-radius: 16px; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; overflow: hidden; font-size: 20px; }
+        .user-row { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+        .avatar { width: 48px; height: 48px; border-radius: 12px; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; overflow: hidden; }
         .avatar img { width: 100%; height: 100%; object-fit: cover; }
-        .username { font-size: 18px; font-weight: 700; color: var(--text); cursor: pointer; transition: 0.2s; }
-        .username:hover { color: var(--accent2); }
         
-        .timer-display { font-family: 'Space Mono', monospace; font-size: 4rem; font-weight: 700; color: var(--text); margin: 10px 0; letter-spacing: -3px; }
+        .timer-display { font-family: 'Space Mono', monospace; font-size: 3.5rem; font-weight: 700; margin: 10px 0; }
         
-        /* Чат */
-        #chatMessages { height: 350px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 8px; margin-bottom: 16px; }
-        .msg { max-width: 85%; padding: 10px 14px; border-radius: 14px; background: var(--bg3); border: 1px solid var(--border); font-size: 14px; line-height: 1.5; }
+        #chatMessages { height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; }
+        .msg { max-width: 85%; padding: 10px 14px; border-radius: 14px; background: var(--bg3); font-size: 14px; border: 1px solid var(--border); }
         .msg.mine { align-self: flex-end; background: rgba(124,106,247,0.1); border-color: rgba(124,106,247,0.2); }
-        .msg-author { font-size: 11px; font-weight: 700; color: var(--accent2); margin-bottom: 4px; }
+        .msg-author { font-size: 11px; font-weight: 700; color: var(--accent2); margin-bottom: 2px; }
 
-        /* Кнопки */
-        .btn-reset { width: 100%; padding: 12px; background: rgba(248,113,113,0.05); color: var(--red); border: 1px solid rgba(248,113,113,0.1); border-radius: 12px; cursor: pointer; font-weight: 600; transition: 0.2s; margin-top: 10px; }
-        .btn-reset:hover { background: rgba(248,113,113,0.12); border-color: var(--red); }
+        .btn-reset { width: 100%; padding: 12px; background: rgba(248,113,113,0.05); color: var(--red); border: 1px solid rgba(248,113,113,0.1); border-radius: 12px; cursor: pointer; font-weight: 600; }
         
-        /* Достижения */
-        .badges-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-        .badge-card { background: var(--bg3); padding: 15px 10px; border-radius: 16px; text-align: center; border: 1px solid var(--border); transition: 0.3s; filter: grayscale(1); opacity: 0.4; }
-        .badge-card.active { filter: none; opacity: 1; border-color: var(--accent); background: linear-gradient(to bottom, rgba(124,106,247,0.1), transparent); }
-        .badge-icon { font-size: 24px; margin-bottom: 6px; display: block; }
-        .badge-name { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; }
-
-        /* Утилиты */
         #loadingScreen { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
         .spinner { width: 40px; height: 40px; border: 3px solid var(--bg3); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
-
-        #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--bg2); border: 1px solid var(--accent); padding: 16px 24px; border-radius: 20px; display: flex; align-items: center; gap: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 2000; opacity: 0; }
-        #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
     </style>
 </head>
 <body>
 
 <div id="loadingScreen">
     <div class="spinner"></div>
-    <p style="margin-top: 20px; color: var(--muted); font-size: 14px;">Синхронизация данных...</p>
 </div>
 
 <div id="loginScreen">
     <div class="login-box">
-        <span class="login-logo">🎓</span>
-        <h1 class="login-title">Study Monitor Pro</h1>
-        <p class="login-sub">Присоединяйтесь к сообществу студентов. Ведите учет времени и соревнуйтесь в реальном времени.</p>
+        <h1 style="margin-bottom: 10px;">Study Monitor</h1>
+        <p style="color: var(--muted); margin-bottom: 30px;">Войдите, чтобы начать сессию обучения</p>
         <button class="btn-google" id="loginBtn">
-            <svg class="google-icon" viewBox="0 0 48 48">
-                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.36-8.16 2.36-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-            </svg>
-            Продолжить через Google
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18">
+            Войти через Google
         </button>
     </div>
 </div>
@@ -130,21 +82,21 @@
                 <div class="user-row">
                     <div class="avatar" id="avatarEl">?</div>
                     <div style="flex: 1">
-                        <div class="username" id="uName" onclick="showStats()">Загрузка...</div>
-                        <div style="font-size: 12px; color: var(--green); margin-top: 4px;">● В сети</div>
+                        <div id="uName" style="font-weight: 700; font-size: 18px;">Загрузка...</div>
+                        <div id="uEmail" style="font-size: 12px; color: var(--muted);"></div>
                     </div>
-                    <button id="logoutBtn" style="background: none; border: none; color: var(--red); font-size: 12px; cursor: pointer; font-weight: 600;">Выйти</button>
+                    <button id="logoutBtn" style="background: none; border: none; color: var(--red); cursor: pointer; font-weight: 600;">Выйти</button>
                 </div>
-                <div class="card-title">⏱️ Текущая сессия</div>
+                <div class="card-title">Таймер обучения</div>
                 <div class="timer-display" id="mainTimer">00:00:00</div>
-                <button class="btn-reset" id="resetBtn">Сбросить статистику дня</button>
+                <button class="btn-reset" id="resetBtn">Сбросить время</button>
             </div>
 
             <div class="card">
-                <div class="card-title">💬 Групповой чат</div>
+                <div class="card-title">Чат группы</div>
                 <div id="chatMessages"></div>
                 <div style="display: flex; gap: 10px;">
-                    <input type="text" id="chatInput" placeholder="Сообщение..." style="flex: 1; background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; color: #fff; outline: none; font-family: inherit;">
+                    <input type="text" id="chatInput" placeholder="Введите сообщение..." style="flex: 1; background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 12px; color: #fff; outline: none;">
                     <button id="sendBtn" style="background: var(--accent); color: #fff; border: none; border-radius: 12px; padding: 0 20px; cursor: pointer; font-weight: 700;">↑</button>
                 </div>
             </div>
@@ -152,53 +104,29 @@
 
         <aside>
             <div class="card">
-                <div class="card-title">🏆 Лидеры</div>
+                <div class="card-title">Топ студентов</div>
                 <div id="leaderboard"></div>
-            </div>
-
-            <div class="card">
-                <div class="card-title">🏅 Значки</div>
-                <div class="badges-grid">
-                    <div class="badge-card" id="b_early_bird"><span class="badge-icon">🌅</span><span class="badge-name">Пташка</span></div>
-                    <div class="badge-card" id="b_marathon"><span class="badge-icon">🏃</span><span class="badge-name">Аскет</span></div>
-                    <div class="badge-card" id="b_activist"><span class="badge-icon">📣</span><span class="badge-name">Спикер</span></div>
-                </div>
             </div>
         </aside>
     </div>
 </div>
 
-<div id="toast">
-    <span id="toast-icon" style="font-size: 24px;">🏆</span>
-    <div>
-        <div id="toast-title" style="font-weight: 700; color: var(--accent2); font-size: 14px;">Успех!</div>
-        <div id="toast-sub" style="color: var(--muted); font-size: 12px;">Вы получили новое достижение</div>
-    </div>
-</div>
-
 <script>
-/** КОНФИГУРАЦИЯ SUPABASE **/
 const S_URL = 'https://ntkqkvgbmhhwrxcdntqg.supabase.co';
 const S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50a3FrdmdibWhod3J4Y2RudHFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3Njg4NzQsImV4cCI6MjA4ODM0NDg3NH0.hMjEh6iJu4FBA24Ji4q7gCQ14vAx7C1EOGv4gkksQRQ';
-const sb = supabase.createClient(S_URL, S_KEY);
 
-/** ПЕРЕМЕННЫЕ СОСТОЯНИЯ **/
-let MY_ID = null, myUsername = '', myEmail = '';
-let studySeconds = 0, msgCount = 0;
-let timerInt = null;
+// Настройка клиента: persistSession: false отключает авто-вход при обновлении
+const sb = supabase.createClient(S_URL, S_KEY, {
+    auth: {
+        persistSession: false, 
+        autoRefreshToken: true,
+        detectSessionInUrl: true
+    }
+});
 
-/** ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ **/
+let MY_ID = null, myUsername = '', studySeconds = 0, timerInt = null;
+
 const fmt = s => [Math.floor(s/3600), Math.floor((s%3600)/60), s%60].map(v => String(v).padStart(2, '0')).join(':');
-const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
-function showToast(icon, title, sub) {
-    const t = document.getElementById('toast');
-    document.getElementById('toast-icon').textContent = icon;
-    document.getElementById('toast-title').textContent = title;
-    document.getElementById('toast-sub').textContent = sub;
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 4000);
-}
 
 function toggleScreen(screen) {
     document.getElementById('loadingScreen').style.display = screen === 'loading' ? 'flex' : 'none';
@@ -206,34 +134,38 @@ function toggleScreen(screen) {
     document.getElementById('appScreen').style.display = screen === 'app' ? 'block' : 'none';
 }
 
-/** АВТОРИЗАЦИЯ **/
+// ВХОД: Добавлен prompt: 'select_account' для выбора почты каждый раз
 async function login() {
     await sb.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: window.location.href }
+        options: { 
+            redirectTo: window.location.href,
+            queryParams: { prompt: 'select_account' }
+        }
     });
 }
 
+// ВЫХОД: Полная очистка
 async function logout() {
-    if(confirm('Выйти из системы?')) {
-        await sb.auth.signOut();
-        location.reload();
-    }
+    await sb.auth.signOut();
+    window.localStorage.clear(); // Очищаем всё, чтобы сессии не путались
+    location.reload();
 }
 
-/** РАБОТА С ДАННЫМИ **/
 async function initProfile(user) {
     const { data: profile } = await sb.from('profiles').select('*').eq('id', user.id).maybeSingle();
     
+    // Если профиля нет (новая почта) или имя не совпадает — создаем/обновляем
+    const googleName = user.user_metadata.full_name || 'Студент';
+    
     if (!profile) {
-        const name = user.user_metadata.full_name || 'Студент ' + Math.floor(Math.random()*1000);
         await sb.from('profiles').insert([{
             id: user.id, 
             email: user.email, 
-            username: name, 
+            username: googleName, 
             study_time: 0
         }]);
-        return { username: name, study_time: 0 };
+        return { username: googleName, study_time: 0 };
     }
     return profile;
 }
@@ -241,52 +173,52 @@ async function initProfile(user) {
 async function loadApp(user) {
     toggleScreen('loading');
     MY_ID = user.id;
-    myEmail = user.email;
 
     const profile = await initProfile(user);
     myUsername = profile.username;
     studySeconds = profile.study_time || 0;
 
-    // UI
     document.getElementById('uName').textContent = myUsername;
+    document.getElementById('uEmail').textContent = user.email;
     document.getElementById('mainTimer').textContent = fmt(studySeconds);
+    
     const pic = user.user_metadata.avatar_url;
-    if(pic) document.getElementById('avatarEl').innerHTML = `<img src="${pic}">`;
-    else document.getElementById('avatarEl').textContent = myUsername[0];
+    document.getElementById('avatarEl').innerHTML = pic ? `<img src="${pic}">` : myUsername[0];
 
-    // Чат и Рейтинг
     loadChat();
     loadRank();
     
-    // Подписки Realtime
-    sb.channel('public:messages').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, p => renderMsg(p.new)).subscribe();
+    // Realtime подписка
+    sb.channel('chat').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, p => renderMsg(p.new)).subscribe();
     
     toggleScreen('app');
-    startStudyTimer();
+    startTimer();
 }
 
-/** ТАЙМЕР И ЧАТ **/
-function startStudyTimer() {
+function startTimer() {
     if(timerInt) clearInterval(timerInt);
     timerInt = setInterval(() => {
         studySeconds++;
         document.getElementById('mainTimer').textContent = fmt(studySeconds);
-        if(studySeconds % 30 === 0) { // Сохраняем каждые 30 секунд
+        if(studySeconds % 10 === 0) {
             sb.from('profiles').update({ study_time: studySeconds }).eq('id', MY_ID).then();
         }
     }, 1000);
 }
 
 async function loadChat() {
-    const { data } = await sb.from('messages').select('*').order('created_at', { ascending: false }).limit(30);
-    if(data) data.reverse().forEach(renderMsg);
+    const { data } = await sb.from('messages').select('*').order('created_at', { ascending: false }).limit(20);
+    if(data) {
+        document.getElementById('chatMessages').innerHTML = '';
+        data.reverse().forEach(renderMsg);
+    }
 }
 
 function renderMsg(m) {
     const container = document.getElementById('chatMessages');
     const div = document.createElement('div');
     div.className = `msg ${m.user_id === MY_ID ? 'mine' : ''}`;
-    div.innerHTML = `<div class="msg-author">${esc(m.username)}</div><div>${esc(m.text)}</div>`;
+    div.innerHTML = `<div class="msg-author">${m.username}</div><div>${m.text}</div>`;
     container.appendChild(div);
     container.scrollTop = container.scrollHeight;
 }
@@ -303,34 +235,32 @@ async function loadRank() {
     const { data } = await sb.from('profiles').select('username, study_time').order('study_time', { ascending: false }).limit(5);
     if(data) {
         document.getElementById('leaderboard').innerHTML = data.map((u, i) => `
-            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px;">
-                <span>${i+1}. ${esc(u.username)}</span>
+            <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px;">
+                <span>${i+1}. ${u.username}</span>
                 <span style="font-family: 'Space Mono'; color: var(--muted);">${fmt(u.study_time)}</span>
             </div>
         `).join('');
     }
 }
 
-/** ИНИЦИАЛИЗАЦИЯ СОБЫТИЙ **/
+// Привязка кнопок
 document.getElementById('loginBtn').onclick = login;
 document.getElementById('logoutBtn').onclick = logout;
 document.getElementById('sendBtn').onclick = sendMsg;
 document.getElementById('chatInput').onkeypress = e => { if(e.key === 'Enter') sendMsg(); };
 document.getElementById('resetBtn').onclick = async () => {
-    if(confirm('Обнулить время за сегодня?')) {
+    if(confirm('Обнулить время?')) {
         studySeconds = 0;
         document.getElementById('mainTimer').textContent = "00:00:00";
         await sb.from('profiles').update({ study_time: 0 }).eq('id', MY_ID);
-        showToast('🔄', 'Сброшено', 'Время обучения обнулено');
     }
 };
 
-/** СЛУШАТЕЛЬ СЕССИИ **/
+// Слушатель состояния
 sb.auth.onAuthStateChange((event, session) => {
     if (session) loadApp(session.user);
     else toggleScreen('login');
 });
-
 </script>
 </body>
 </html>
