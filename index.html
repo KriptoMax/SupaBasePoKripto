@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Study Monitor Pro</title>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <title>Study Monitor Pro | Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
             --bg: #0f0f13; --bg2: #18181f; --bg3: #22222c;
             --accent: #7c6af7; --accent2: #a78bfa;
@@ -15,122 +14,103 @@
             --border: rgba(255,255,255,0.08);
             --green: #34d399; --red: #f87171; --gold: #fbbf24;
         }
-        body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'DM Sans', sans-serif; 
+            background: var(--bg); 
+            color: var(--text); 
+            min-height: 100vh; 
+            overflow-x: hidden;
+        }
 
         /* ── ЭКРАН ВХОДА ── */
-        #loginScreen { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; }
+        #loginScreen { 
+            display: flex; align-items: center; justify-content: center; 
+            min-height: 100vh; padding: 20px; 
+            background: radial-gradient(circle at top right, rgba(124,106,247,0.05), transparent);
+        }
         .login-box {
             background: var(--bg2); border: 1px solid var(--border);
-            border-radius: 24px; padding: 48px 40px;
-            width: 100%; max-width: 400px; text-align: center;
+            border-radius: 28px; padding: 40px;
+            width: 100%; max-width: 420px; text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
         }
-        .login-logo { font-size: 52px; margin-bottom: 20px; display: block; }
-        .login-title { font-size: 24px; font-weight: 600; margin-bottom: 8px; }
-        .login-sub { font-size: 14px; color: var(--muted); line-height: 1.65; margin-bottom: 36px; }
+        .login-logo { font-size: 64px; margin-bottom: 20px; display: block; }
+        .login-title { font-size: 28px; font-weight: 700; margin-bottom: 12px; }
+        .login-sub { font-size: 15px; color: var(--muted); line-height: 1.6; margin-bottom: 32px; }
+        
         .btn-google {
             display: flex; align-items: center; justify-content: center;
-            gap: 12px; width: 100%; padding: 14px 20px;
-            background: #fff; color: #1f1f1f; border: none;
-            border-radius: 12px; font-family: 'DM Sans', sans-serif;
-            font-size: 15px; font-weight: 600; cursor: pointer; transition: 0.2s;
+            gap: 12px; width: 100%; padding: 16px;
+            background: #ffffff; color: #1f1f1f; border: none;
+            border-radius: 14px; font-family: 'DM Sans', sans-serif;
+            font-size: 16px; font-weight: 700; cursor: pointer; 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .btn-google:hover { background: #f0f0f0; transform: translateY(-1px); }
-        .google-icon { width: 20px; height: 20px; flex-shrink: 0; }
-        .login-hint { margin-top: 20px; font-size: 12px; color: var(--muted); }
+        .btn-google:hover { background: #f3f3f3; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(255,255,255,0.1); }
+        .btn-google:active { transform: translateY(0); }
+        .btn-google:disabled { opacity: 0.6; cursor: not-allowed; }
+        .google-icon { width: 22px; height: 22px; }
 
-        /* ── ЗАГРУЗКА ── */
-        #loadingScreen { display: none; align-items: center; justify-content: center; min-height: 100vh; flex-direction: column; gap: 16px; }
-        .spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .loading-text { font-size: 14px; color: var(--muted); }
+        /* ── ОСНОВНОЙ КОНТЕНТ ── */
+        #appScreen { display: none; padding: 24px 16px; animation: fadeIn 0.5s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* ── ОСНОВНОЙ ЭКРАН ── */
-        #appScreen { display: none; padding: 24px 16px; }
-        .layout { max-width: 960px; margin: 0 auto; display: grid; grid-template-columns: 1fr 280px; gap: 16px; }
-        @media (max-width: 720px) { .layout { grid-template-columns: 1fr; } }
+        .layout { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1fr 320px; gap: 20px; }
+        @media (max-width: 850px) { .layout { grid-template-columns: 1fr; } }
 
-        .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin-bottom: 16px; }
-        .card-title { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+        .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 20px; padding: 24px; margin-bottom: 20px; }
+        .card-title { font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
 
-        /* профиль */
-        .user-row { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
-        .avatar { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #7c6af7, #a78bfa); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; color: #fff; flex-shrink: 0; overflow: hidden; }
+        /* Таймер и Профиль */
+        .user-row { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+        .avatar { width: 52px; height: 52px; border-radius: 16px; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; overflow: hidden; font-size: 20px; }
         .avatar img { width: 100%; height: 100%; object-fit: cover; }
-        .user-info { flex: 1; min-width: 0; }
-        .username { font-size: 16px; font-weight: 600; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .username { font-size: 18px; font-weight: 700; color: var(--text); cursor: pointer; transition: 0.2s; }
         .username:hover { color: var(--accent2); }
-        .user-email { font-size: 11px; color: var(--muted); }
-        .status-dot { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--green); margin-top: 2px; }
-        .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
-        .btn-logout { padding: 6px 12px; background: transparent; border: 1px solid var(--border); border-radius: 8px; color: var(--muted); font-size: 12px; font-family: 'DM Sans', sans-serif; cursor: pointer; white-space: nowrap; transition: 0.2s; flex-shrink: 0; }
-        .btn-logout:hover { border-color: var(--red); color: var(--red); }
+        
+        .timer-display { font-family: 'Space Mono', monospace; font-size: 4rem; font-weight: 700; color: var(--text); margin: 10px 0; letter-spacing: -3px; }
+        
+        /* Чат */
+        #chatMessages { height: 350px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 8px; margin-bottom: 16px; }
+        .msg { max-width: 85%; padding: 10px 14px; border-radius: 14px; background: var(--bg3); border: 1px solid var(--border); font-size: 14px; line-height: 1.5; }
+        .msg.mine { align-self: flex-end; background: rgba(124,106,247,0.1); border-color: rgba(124,106,247,0.2); }
+        .msg-author { font-size: 11px; font-weight: 700; color: var(--accent2); margin-bottom: 4px; }
 
-        /* таймер */
-        .timer { font-family: 'Space Mono', monospace; font-size: 3.2rem; font-weight: 700; letter-spacing: -2px; margin: 4px 0; line-height: 1; }
-        .timer-label { font-size: 12px; color: var(--muted); margin-bottom: 20px; }
+        /* Кнопки */
+        .btn-reset { width: 100%; padding: 12px; background: rgba(248,113,113,0.05); color: var(--red); border: 1px solid rgba(248,113,113,0.1); border-radius: 12px; cursor: pointer; font-weight: 600; transition: 0.2s; margin-top: 10px; }
+        .btn-reset:hover { background: rgba(248,113,113,0.12); border-color: var(--red); }
+        
+        /* Достижения */
+        .badges-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .badge-card { background: var(--bg3); padding: 15px 10px; border-radius: 16px; text-align: center; border: 1px solid var(--border); transition: 0.3s; filter: grayscale(1); opacity: 0.4; }
+        .badge-card.active { filter: none; opacity: 1; border-color: var(--accent); background: linear-gradient(to bottom, rgba(124,106,247,0.1), transparent); }
+        .badge-icon { font-size: 24px; margin-bottom: 6px; display: block; }
+        .badge-name { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; }
 
-        /* значки */
-        .badges-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
-        .badge-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 12px 8px; text-align: center; transition: all 0.3s; opacity: 0.3; filter: grayscale(1); }
-        .badge-card.active { opacity: 1; filter: none; border-color: var(--accent); background: rgba(124,106,247,0.1); }
-        .badge-icon { font-size: 22px; display: block; margin-bottom: 4px; }
-        .badge-name { font-size: 10px; color: var(--muted); line-height: 1.3; }
-        .badge-card.active .badge-name { color: var(--accent2); }
+        /* Утилиты */
+        #loadingScreen { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
+        .spinner { width: 40px; height: 40px; border: 3px solid var(--bg3); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-        .btn-reset { width: 100%; padding: 10px; background: rgba(248,113,113,0.08); color: var(--red); border: 1px solid rgba(248,113,113,0.2); border-radius: 10px; cursor: pointer; font-size: 13px; font-family: 'DM Sans', sans-serif; font-weight: 500; transition: 0.2s; }
-        .btn-reset:hover { background: rgba(248,113,113,0.18); }
-
-        /* чат */
-        #chatMessages { height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
-        #chatMessages::-webkit-scrollbar { width: 4px; }
-        #chatMessages::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 2px; }
-        .msg { max-width: 82%; align-self: flex-start; background: var(--bg3); border: 1px solid var(--border); border-radius: 4px 12px 12px 12px; padding: 8px 12px; }
-        .msg.mine { align-self: flex-end; background: rgba(124,106,247,0.15); border-color: rgba(124,106,247,0.25); border-radius: 12px 4px 12px 12px; }
-        .msg-author { font-size: 10px; font-weight: 600; color: var(--accent2); margin-bottom: 2px; }
-        .msg.mine .msg-author { text-align: right; color: var(--accent); }
-        .msg-text { font-size: 14px; line-height: 1.5; word-break: break-word; }
-        .chat-input-row { display: flex; gap: 8px; }
-        .chat-input-row input { flex: 1; background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text); outline: none; transition: 0.2s; }
-        .chat-input-row input::placeholder { color: var(--muted); }
-        .chat-input-row input:focus { border-color: var(--accent); }
-        .btn-send { padding: 10px 18px; background: var(--accent); color: #fff; border: none; border-radius: 10px; font-size: 16px; cursor: pointer; transition: 0.2s; }
-        .btn-send:hover { background: var(--accent2); }
-
-        /* рейтинг */
-        .rank-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
-        .rank-item:last-child { border-bottom: none; }
-        .rank-num { width: 22px; font-family: 'Space Mono', monospace; font-size: 12px; color: var(--muted); text-align: center; flex-shrink: 0; }
-        .rank-name { flex: 1; font-size: 14px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .rank-time { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--muted); background: var(--bg3); padding: 3px 8px; border-radius: 6px; flex-shrink: 0; }
-
-        /* тост */
-        #toast { position: fixed; bottom: 24px; right: 24px; background: var(--bg2); border: 1px solid var(--accent); border-radius: 14px; padding: 14px 18px; display: flex; align-items: center; gap: 12px; box-shadow: 0 8px 32px rgba(124,106,247,0.2); transform: translateY(120px); opacity: 0; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); z-index: 300; max-width: 280px; }
-        #toast.show { transform: translateY(0); opacity: 1; }
-        #toast-icon { font-size: 26px; }
-        #toast-title { font-weight: 600; color: var(--accent2); font-size: 13px; }
-        #toast-sub { color: var(--muted); font-size: 12px; margin-top: 2px; }
-
-        /* модал */
-        #statsOverlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 200; align-items: center; justify-content: center; }
-        #statsOverlay.open { display: flex; }
-        #statsModal { background: var(--bg2); border: 1px solid var(--border); border-radius: 20px; padding: 28px; min-width: 300px; max-width: 90vw; }
-        #statsModal h3 { font-size: 18px; margin-bottom: 20px; }
-        .stat-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
-        .stat-row:last-child { border-bottom: none; }
-        .stat-label { color: var(--muted); }
-        .stat-val { font-family: 'Space Mono', monospace; font-weight: 700; font-size: 13px; max-width: 55%; text-align: right; overflow-wrap: anywhere; }
-        .btn-close { margin-top: 20px; width: 100%; padding: 10px; background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; cursor: pointer; }
+        #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--bg2); border: 1px solid var(--accent); padding: 16px 24px; border-radius: 20px; display: flex; align-items: center; gap: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 2000; opacity: 0; }
+        #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
     </style>
 </head>
 <body>
 
-<!-- ЭКРАН ВХОДА -->
+<div id="loadingScreen">
+    <div class="spinner"></div>
+    <p style="margin-top: 20px; color: var(--muted); font-size: 14px;">Синхронизация данных...</p>
+</div>
+
 <div id="loginScreen">
     <div class="login-box">
-        <span class="login-logo">📚</span>
-        <div class="login-title">Study Monitor Pro</div>
-        <p class="login-sub">Войди через Google — твой прогресс сохранится автоматически и ты попадёшь в общий рейтинг группы</p>
+        <span class="login-logo">🎓</span>
+        <h1 class="login-title">Study Monitor Pro</h1>
+        <p class="login-sub">Присоединяйтесь к сообществу студентов. Ведите учет времени и соревнуйтесь в реальном времени.</p>
         <button class="btn-google" id="loginBtn">
             <svg class="google-icon" viewBox="0 0 48 48">
                 <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
@@ -138,101 +118,78 @@
                 <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
                 <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.36-8.16 2.36-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
             </svg>
-            Войти через Google
+            Продолжить через Google
         </button>
-        <p class="login-hint">Только твоя учёба — никакой лишней информации</p>
     </div>
 </div>
 
-<!-- ЗАГРУЗКА -->
-<div id="loadingScreen">
-    <div class="spinner"></div>
-    <div class="loading-text">Загрузка профиля...</div>
-</div>
-
-<!-- ОСНОВНОЙ ЭКРАН -->
 <div id="appScreen">
     <div class="layout">
-        <div>
+        <main>
             <div class="card">
                 <div class="user-row">
-                    <div class="avatar" id="avatarEl">М</div>
-                    <div class="user-info">
-                        <div class="username" id="uName" title="Нажми для статистики">...</div>
-                        <div class="user-email" id="uEmail"></div>
-                        <div class="status-dot"><span class="dot"></span> В сети</div>
+                    <div class="avatar" id="avatarEl">?</div>
+                    <div style="flex: 1">
+                        <div class="username" id="uName" onclick="showStats()">Загрузка...</div>
+                        <div style="font-size: 12px; color: var(--green); margin-top: 4px;">● В сети</div>
                     </div>
-                    <button class="btn-logout" id="logoutBtn">Выйти</button>
+                    <button id="logoutBtn" style="background: none; border: none; color: var(--red); font-size: 12px; cursor: pointer; font-weight: 600;">Выйти</button>
                 </div>
-                <div class="timer" id="mainTimer">00:00:00</div>
-                <div class="timer-label">Время обучения сегодня</div>
-                <div class="card-title">Достижения</div>
+                <div class="card-title">⏱️ Текущая сессия</div>
+                <div class="timer-display" id="mainTimer">00:00:00</div>
+                <button class="btn-reset" id="resetBtn">Сбросить статистику дня</button>
+            </div>
+
+            <div class="card">
+                <div class="card-title">💬 Групповой чат</div>
+                <div id="chatMessages"></div>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="chatInput" placeholder="Сообщение..." style="flex: 1; background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; color: #fff; outline: none; font-family: inherit;">
+                    <button id="sendBtn" style="background: var(--accent); color: #fff; border: none; border-radius: 12px; padding: 0 20px; cursor: pointer; font-weight: 700;">↑</button>
+                </div>
+            </div>
+        </main>
+
+        <aside>
+            <div class="card">
+                <div class="card-title">🏆 Лидеры</div>
+                <div id="leaderboard"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">🏅 Значки</div>
                 <div class="badges-grid">
-                    <div class="badge-card" id="b_early_bird"><span class="badge-icon">🌅</span><span class="badge-name">Ранняя пташка</span></div>
-                    <div class="badge-card" id="b_marathon"><span class="badge-icon">🏃</span><span class="badge-name">Марафонец</span></div>
-                    <div class="badge-card" id="b_activist"><span class="badge-icon">📣</span><span class="badge-name">Активист</span></div>
-                </div>
-                <button class="btn-reset" id="resetBtn">Сбросить прогресс обучения</button>
-            </div>
-
-            <div class="card">
-                <div class="card-title">Общий чат</div>
-                <div id="chatMessages"><span style="color:var(--muted);font-size:13px;">Загрузка...</span></div>
-                <div class="chat-input-row">
-                    <input type="text" id="chatInput" placeholder="Написать сообщение...">
-                    <button class="btn-send" id="sendBtn">↑</button>
+                    <div class="badge-card" id="b_early_bird"><span class="badge-icon">🌅</span><span class="badge-name">Пташка</span></div>
+                    <div class="badge-card" id="b_marathon"><span class="badge-icon">🏃</span><span class="badge-name">Аскет</span></div>
+                    <div class="badge-card" id="b_activist"><span class="badge-icon">📣</span><span class="badge-name">Спикер</span></div>
                 </div>
             </div>
-        </div>
-
-        <div>
-            <div class="card">
-                <div class="card-title">🏆 Топ студентов</div>
-                <div id="leaderboard"><span style="color:var(--muted);font-size:13px;">Загрузка...</span></div>
-            </div>
-        </div>
+        </aside>
     </div>
 </div>
 
-<!-- ТОСТ -->
 <div id="toast">
-    <span id="toast-icon">🏅</span>
-    <div><div id="toast-title">Достижение!</div><div id="toast-sub">...</div></div>
-</div>
-
-<!-- МОДАЛ -->
-<div id="statsOverlay">
-    <div id="statsModal">
-        <h3 id="modal-title">Статистика</h3>
-        <div class="stat-row"><span class="stat-label">Время обучения</span><span class="stat-val" id="modal-time">-</span></div>
-        <div class="stat-row"><span class="stat-label">Email</span><span class="stat-val" id="modal-email" style="font-size:11px;">-</span></div>
-        <div class="stat-row"><span class="stat-label">Статус</span><span class="stat-val" id="modal-status">-</span></div>
-        <div class="stat-row"><span class="stat-label">Достижений</span><span class="stat-val" id="modal-achs">-</span></div>
-        <button class="btn-close" onclick="document.getElementById('statsOverlay').classList.remove('open')">Закрыть</button>
+    <span id="toast-icon" style="font-size: 24px;">🏆</span>
+    <div>
+        <div id="toast-title" style="font-weight: 700; color: var(--accent2); font-size: 14px;">Успех!</div>
+        <div id="toast-sub" style="color: var(--muted); font-size: 12px;">Вы получили новое достижение</div>
     </div>
 </div>
 
 <script>
+/** КОНФИГУРАЦИЯ SUPABASE **/
 const S_URL = 'https://ntkqkvgbmhhwrxcdntqg.supabase.co';
 const S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50a3FrdmdibWhod3J4Y2RudHFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3Njg4NzQsImV4cCI6MjA4ODM0NDg3NH0.hMjEh6iJu4FBA24Ji4q7gCQ14vAx7C1EOGv4gkksQRQ';
 const sb = supabase.createClient(S_URL, S_KEY);
 
+/** ПЕРЕМЕННЫЕ СОСТОЯНИЯ **/
 let MY_ID = null, myUsername = '', myEmail = '';
-let totalStudySeconds = 0, myMessageCount = 0;
-let earnedBadges = new Set(), timerInterval = null;
+let studySeconds = 0, msgCount = 0;
+let timerInt = null;
 
-const BADGE_CONFIG = {
-    early_bird: { icon: '🌅', name: 'Ранняя пташка', desc: 'Зашёл до 8:00 утра' },
-    marathon:   { icon: '🏃', name: 'Марафонец',     desc: 'Проучился 2+ часа подряд' },
-    activist:   { icon: '📣', name: 'Активист',       desc: 'Написал 20 сообщений в чате' },
-};
-
-/* ── УТИЛИТЫ ── */
-function fmt(sec) {
-    return [Math.floor(sec/3600), Math.floor((sec%3600)/60), sec%60]
-        .map(v => String(v).padStart(2,'0')).join(':');
-}
-function esc(s='') { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+/** ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ **/
+const fmt = s => [Math.floor(s/3600), Math.floor((s%3600)/60), s%60].map(v => String(v).padStart(2, '0')).join(':');
+const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 function showToast(icon, title, sub) {
     const t = document.getElementById('toast');
@@ -240,232 +197,140 @@ function showToast(icon, title, sub) {
     document.getElementById('toast-title').textContent = title;
     document.getElementById('toast-sub').textContent = sub;
     t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 4500);
+    setTimeout(() => t.classList.remove('show'), 4000);
 }
 
-function showScreen(name) {
-    document.getElementById('loginScreen').style.display   = name==='login'   ? 'flex'  : 'none';
-    document.getElementById('loadingScreen').style.display = name==='loading' ? 'flex'  : 'none';
-    document.getElementById('appScreen').style.display     = name==='app'     ? 'block' : 'none';
+function toggleScreen(screen) {
+    document.getElementById('loadingScreen').style.display = screen === 'loading' ? 'flex' : 'none';
+    document.getElementById('loginScreen').style.display = screen === 'login' ? 'flex' : 'none';
+    document.getElementById('appScreen').style.display = screen === 'app' ? 'block' : 'none';
 }
 
-/* ── GOOGLE OAUTH ── */
-async function loginWithGoogle() {
-    document.getElementById('loginBtn').textContent = 'Перенаправление...';
-    const { error } = await sb.auth.signInWithOAuth({
+/** АВТОРИЗАЦИЯ **/
+async function login() {
+    await sb.auth.signInWithOAuth({
         provider: 'google',
         options: { redirectTo: window.location.href }
     });
-    if (error) {
-        alert('Ошибка: ' + error.message);
-        document.getElementById('loginBtn').textContent = 'Войти через Google';
-    }
 }
 
 async function logout() {
-    if (!confirm('Выйти из аккаунта?')) return;
-    clearInterval(timerInterval);
-    await sb.auth.signOut();
+    if(confirm('Выйти из системы?')) {
+        await sb.auth.signOut();
+        location.reload();
+    }
 }
 
-/* ── ПРОФИЛЬ: автосоздание при первом входе ── */
-async function ensureProfile(user) {
-    const { data } = await sb.from('profiles').select('id').eq('id', user.id).maybeSingle();
-    if (!data) {
-        const name = user.user_metadata?.full_name
-                  || user.user_metadata?.name
-                  || user.email?.split('@')[0]
-                  || 'Студент';
+/** РАБОТА С ДАННЫМИ **/
+async function initProfile(user) {
+    const { data: profile } = await sb.from('profiles').select('*').eq('id', user.id).maybeSingle();
+    
+    if (!profile) {
+        const name = user.user_metadata.full_name || 'Студент ' + Math.floor(Math.random()*1000);
         await sb.from('profiles').insert([{
-            id: user.id, email: user.email,
-            username: name, status: '🟢 В сети | Активен', study_time: 0
+            id: user.id, 
+            email: user.email, 
+            username: name, 
+            study_time: 0
         }]);
+        return { username: name, study_time: 0 };
     }
+    return profile;
 }
 
-/* ── ЗАДАНИЕ 16 — ФУНКЦИЯ 1: getUserProfile ──
-   Получает профиль по userId из таблицы profiles.
-   .select() — только нужные поля, не *
-   .eq()     — WHERE id = userId
-   .single() — ожидаем одну строку */
-async function getUserProfile(userId) {
-    const { data, error } = await sb
-        .from('profiles')
-        .select('username, study_time, status')
-        .eq('id', userId)
-        .single();
-    if (error) { console.error('getUserProfile:', error.message); return null; }
-    return data;
+async function loadApp(user) {
+    toggleScreen('loading');
+    MY_ID = user.id;
+    myEmail = user.email;
+
+    const profile = await initProfile(user);
+    myUsername = profile.username;
+    studySeconds = profile.study_time || 0;
+
+    // UI
+    document.getElementById('uName').textContent = myUsername;
+    document.getElementById('mainTimer').textContent = fmt(studySeconds);
+    const pic = user.user_metadata.avatar_url;
+    if(pic) document.getElementById('avatarEl').innerHTML = `<img src="${pic}">`;
+    else document.getElementById('avatarEl').textContent = myUsername[0];
+
+    // Чат и Рейтинг
+    loadChat();
+    loadRank();
+    
+    // Подписки Realtime
+    sb.channel('public:messages').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, p => renderMsg(p.new)).subscribe();
+    
+    toggleScreen('app');
+    startStudyTimer();
 }
 
-/* ── ЗАДАНИЕ 16 — ФУНКЦИЯ 2: resetMyTime ──
-   Сбрасывает время через RPC (хранимую процедуру).
-   .rpc() вместо прямого .update() — логика в БД,
-   клиент не знает деталей реализации. */
-async function resetMyTime() {
-    if (!confirm('Обнулить время обучения?')) return;
-    const { error } = await sb.rpc('reset_study_time', { user_uuid: MY_ID });
-    if (!error) {
-        totalStudySeconds = 0;
-        document.getElementById('mainTimer').textContent = '00:00:00';
-        showToast('🔄', 'Прогресс сброшен', 'Время обнулено');
-        loadLeaderboard();
-    } else { alert('Ошибка: ' + error.message); }
-}
-
-/* ── ДОСТИЖЕНИЯ ── */
-async function grantBadge(type) {
-    if (earnedBadges.has(type)) return;
-    const { data: ex } = await sb.from('achievements').select('id').eq('user_id', MY_ID).eq('type', type).maybeSingle();
-    if (ex) { earnedBadges.add(type); return; }
-    const { error } = await sb.from('achievements').insert([{ user_id: MY_ID, type }]);
-    if (!error) {
-        earnedBadges.add(type);
-        document.getElementById('b_' + type)?.classList.add('active');
-        const c = BADGE_CONFIG[type];
-        showToast(c.icon, 'Достижение получено!', c.name + ' — ' + c.desc);
-    }
-}
-
-function checkAchievements() {
-    if (!MY_ID) return;
-    if (new Date().getHours() < 8)         grantBadge('early_bird');
-    if (totalStudySeconds >= 2 * 3600)     grantBadge('marathon');
-    if (myMessageCount >= 20)              grantBadge('activist');
-}
-
-/* ── ТАЙМЕР ── */
-function startTimer() {
-    if (timerInterval) clearInterval(timerInterval);
-    timerInterval = setInterval(async () => {
-        totalStudySeconds++;
-        document.getElementById('mainTimer').textContent = fmt(totalStudySeconds);
-        checkAchievements();
-        if (totalStudySeconds % 10 === 0) {
-            await sb.from('profiles').update({ study_time: totalStudySeconds }).eq('id', MY_ID);
-            if (totalStudySeconds % 60 === 0) loadLeaderboard();
+/** ТАЙМЕР И ЧАТ **/
+function startStudyTimer() {
+    if(timerInt) clearInterval(timerInt);
+    timerInt = setInterval(() => {
+        studySeconds++;
+        document.getElementById('mainTimer').textContent = fmt(studySeconds);
+        if(studySeconds % 30 === 0) { // Сохраняем каждые 30 секунд
+            sb.from('profiles').update({ study_time: studySeconds }).eq('id', MY_ID).then();
         }
     }, 1000);
 }
 
-/* ── ЧАТ ── */
-function renderMsg(msg) {
-    const box = document.getElementById('chatMessages');
-    if (box.querySelector('span')) box.innerHTML = '';
-    const d = document.createElement('div');
-    d.className = 'msg' + (msg.user_id === MY_ID ? ' mine' : '');
-    d.innerHTML = `<div class="msg-author">${esc(msg.username||'Аноним')}</div><div class="msg-text">${esc(msg.text)}</div>`;
-    box.appendChild(d);
-    box.scrollTop = box.scrollHeight;
+async function loadChat() {
+    const { data } = await sb.from('messages').select('*').order('created_at', { ascending: false }).limit(30);
+    if(data) data.reverse().forEach(renderMsg);
 }
 
-async function sendMessage() {
-    const inp = document.getElementById('chatInput');
-    const text = inp.value.trim();
-    if (!text) return;
-    await sb.from('messages').insert([{ user_id: MY_ID, username: myUsername, text }]);
-    inp.value = '';
-    myMessageCount++;
-    checkAchievements();
+function renderMsg(m) {
+    const container = document.getElementById('chatMessages');
+    const div = document.createElement('div');
+    div.className = `msg ${m.user_id === MY_ID ? 'mine' : ''}`;
+    div.innerHTML = `<div class="msg-author">${esc(m.username)}</div><div>${esc(m.text)}</div>`;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
 }
 
-/* ── РЕЙТИНГ ── */
-async function loadLeaderboard() {
+async function sendMsg() {
+    const input = document.getElementById('chatInput');
+    const val = input.value.trim();
+    if(!val) return;
+    input.value = '';
+    await sb.from('messages').insert([{ user_id: MY_ID, username: myUsername, text: val }]);
+}
+
+async function loadRank() {
     const { data } = await sb.from('profiles').select('username, study_time').order('study_time', { ascending: false }).limit(5);
-    if (!data) return;
-    const ico = ['🥇','🥈','🥉'];
-    document.getElementById('leaderboard').innerHTML = data.map((u,i) => `
-        <div class="rank-item">
-            <span class="rank-num">${ico[i]||i+1}</span>
-            <span class="rank-name">${esc(u.username||'Студент')}</span>
-            <span class="rank-time">${fmt(u.study_time||0)}</span>
-        </div>`).join('');
-}
-
-/* ── ЗАГРУЗКА ПРОФИЛЯ ── */
-async function loadMeta(user) {
-    const { data: p } = await sb.from('profiles').select('*').eq('id', MY_ID).single();
-    if (p) {
-        myUsername = p.username;
-        totalStudySeconds = p.study_time || 0;
-        const avatarEl = document.getElementById('avatarEl');
-        const pic = user.user_metadata?.avatar_url || user.user_metadata?.picture;
-        avatarEl.innerHTML = pic
-            ? `<img src="${pic}" alt="" referrerpolicy="no-referrer">`
-            : myUsername.charAt(0).toUpperCase();
-        document.getElementById('uName').textContent    = myUsername;
-        document.getElementById('uEmail').textContent   = myEmail;
-        document.getElementById('mainTimer').textContent = fmt(totalStudySeconds);
+    if(data) {
+        document.getElementById('leaderboard').innerHTML = data.map((u, i) => `
+            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px;">
+                <span>${i+1}. ${esc(u.username)}</span>
+                <span style="font-family: 'Space Mono'; color: var(--muted);">${fmt(u.study_time)}</span>
+            </div>
+        `).join('');
     }
-    const { data: achs } = await sb.from('achievements').select('type').eq('user_id', MY_ID);
-    if (achs) achs.forEach(a => { earnedBadges.add(a.type); document.getElementById('b_'+a.type)?.classList.add('active'); });
-    checkAchievements();
-    await loadLeaderboard();
 }
 
-/* ── СТАТИСТИКА ── */
-async function showStats() {
-    const s = await getUserProfile(MY_ID);
-    if (!s) return;
-    document.getElementById('modal-title').textContent  = 'Статистика: ' + s.username;
-    document.getElementById('modal-time').textContent   = fmt(s.study_time||0);
-    document.getElementById('modal-email').textContent  = myEmail;
-    document.getElementById('modal-status').textContent = s.status||'—';
-    document.getElementById('modal-achs').textContent   = earnedBadges.size + ' / ' + Object.keys(BADGE_CONFIG).length;
-    document.getElementById('statsOverlay').classList.add('open');
-}
-
-/* ── ЗАПУСК ПРИЛОЖЕНИЯ ── */
-async function startApp(user) {
-    showScreen('loading');
-    MY_ID   = user.id;
-    myEmail = user.email;
-    await ensureProfile(user);
-    await loadMeta(user);
-
-    const { data: hist } = await sb.from('messages').select('*').order('created_at', { ascending: true }).limit(50);
-    if (hist) {
-        hist.forEach(renderMsg);
-        myMessageCount = hist.filter(m => m.user_id === MY_ID).length;
+/** ИНИЦИАЛИЗАЦИЯ СОБЫТИЙ **/
+document.getElementById('loginBtn').onclick = login;
+document.getElementById('logoutBtn').onclick = logout;
+document.getElementById('sendBtn').onclick = sendMsg;
+document.getElementById('chatInput').onkeypress = e => { if(e.key === 'Enter') sendMsg(); };
+document.getElementById('resetBtn').onclick = async () => {
+    if(confirm('Обнулить время за сегодня?')) {
+        studySeconds = 0;
+        document.getElementById('mainTimer').textContent = "00:00:00";
+        await sb.from('profiles').update({ study_time: 0 }).eq('id', MY_ID);
+        showToast('🔄', 'Сброшено', 'Время обучения обнулено');
     }
+};
 
-    showScreen('app');
-    startTimer();
+/** СЛУШАТЕЛЬ СЕССИИ **/
+sb.auth.onAuthStateChange((event, session) => {
+    if (session) loadApp(session.user);
+    else toggleScreen('login');
+});
 
-    document.getElementById('sendBtn').onclick     = sendMessage;
-    document.getElementById('chatInput').onkeydown = e => { if(e.key==='Enter') sendMessage(); };
-    document.getElementById('resetBtn').onclick    = resetMyTime;
-    document.getElementById('logoutBtn').onclick   = logout;
-    document.getElementById('uName').onclick       = showStats;
-    document.getElementById('statsOverlay').onclick = e => {
-        if (e.target === document.getElementById('statsOverlay'))
-            document.getElementById('statsOverlay').classList.remove('open');
-    };
-
-    sb.channel('chat-live')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, p => renderMsg(p.new))
-        .subscribe();
-}
-
-/* ── ГЛАВНАЯ ТОЧКА ВХОДА ── */
-(async () => {
-    showScreen('loading');
-    document.getElementById('loginBtn').onclick = loginWithGoogle;
-
-    // Слушаем события авторизации (вход / выход / возврат после Google redirect)
-    sb.auth.onAuthStateChange(async (event, session) => {
-        if (session?.user) {
-            await startApp(session.user);
-        } else {
-            clearInterval(timerInterval);
-            showScreen('login');
-        }
-    });
-
-    // Проверяем текущую сессию при первой загрузке
-    const { data: { session } } = await sb.auth.getSession();
-    if (!session) showScreen('login');
-})();
 </script>
 </body>
 </html>
